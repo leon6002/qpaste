@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { Stage, Layer, Image as KonvaImage, Rect, Group, Arrow } from "react-konva";
 import { X, Save, Copy as CopyIcon, Square, ArrowRight } from "lucide-react";
 import { save } from '@tauri-apps/plugin-dialog';
@@ -53,33 +54,50 @@ function App() {
   const stageRef = useRef<any>(null);
   const borderRef = useRef<any>(null);
 
-  useEffect(() => {
-    async function init() {
-      try {
-        const result = await invoke<MonitorCapture[]>("capture_screen");
-        setCaptures(result);
+  const captureScreen = async () => {
+    try {
+      setIsReady(false);
+      const result = await invoke<MonitorCapture[]>("capture_screen");
+      setCaptures(result);
 
-        const loadedImages = await Promise.all(
-          result.map((cap) => {
-            return new Promise<HTMLImageElement>((resolve) => {
-              const img = new Image();
-              img.onload = () => resolve(img);
-              img.src = cap.image_base64;
-            });
-          })
-        );
-        setImages(loadedImages);
+      const loadedImages = await Promise.all(
+        result.map((cap) => {
+          return new Promise<HTMLImageElement>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.src = cap.image_base64;
+          });
+        })
+      );
+      setImages(loadedImages);
 
-        const win = getCurrentWindow();
-        await win.show();
-        await win.setFocus();
-        setIsReady(true);
-      } catch (e) {
-        console.error("Failed to capture screen:", e);
-      }
+      // Reset state
+      setSelection({ startX: 0, startY: 0, endX: 0, endY: 0, isSelecting: false });
+      setAnnotations([]);
+      setCurrentAnnotation(null);
+      setTool('select');
+      setShowToolbar(false);
+
+      setIsReady(true);
+    } catch (e) {
+      console.error("Failed to capture screen:", e);
     }
+  };
 
-    init();
+  useEffect(() => {
+    // Listen for start_capture event from backend (Tray/Shortcut)
+    const unlisten = listen("start_capture", () => {
+      captureScreen();
+    });
+
+    // Initial capture (optional, maybe we start hidden?)
+    // captureScreen();
+    // Actually, let's capture on mount so if they run it manually it works
+    captureScreen();
+
+    return () => {
+      unlisten.then(f => f());
+    };
   }, []);
 
   const handleMouseDown = (e: any) => {
@@ -184,10 +202,10 @@ function App() {
 
     try {
       await invoke("copy_to_clipboard", { base64Image: dataUrl });
-      await getCurrentWindow().close();
+      await getCurrentWindow().hide(); // Hide instead of close
     } catch (e) {
       console.error("Failed to copy:", e);
-      alert("Failed to copy to clipboard");
+      alert(`Failed to copy to clipboard: ${JSON.stringify(e)}`);
     }
   };
 
@@ -214,24 +232,58 @@ function App() {
 
       if (path) {
         await invoke("save_image", { path, base64Image: dataUrl });
-        await getCurrentWindow().close();
+        await getCurrentWindow().hide(); // Hide instead of close
       }
     } catch (e) {
       console.error("Failed to save:", e);
-      alert("Failed to save image");
+      alert(`Failed to save image: ${JSON.stringify(e)}`);
     }
   };
 
   const handleClose = async () => {
-    await getCurrentWindow().close();
+    await getCurrentWindow().hide(); // Hide instead of close
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   if (!isReady) return null;
 
   const { x, y, width, height } = getSelectionRect();
+  const scale = 1 / window.devicePixelRatio;
 
   return (
     <>
+      <div
+        style={{
+          position: 'fixed',
+          top: 20,
+          right: 20,
+          zIndex: 9999,
+          cursor: 'pointer',
+          background: 'rgba(0,0,0,0.5)',
+          borderRadius: '50%',
+          padding: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white'
+        }}
+        onClick={handleClose}
+        title="Close (Esc)"
+      >
+        <X size={24} />
+      </div>
+
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
@@ -245,10 +297,10 @@ function App() {
             <KonvaImage
               key={i}
               image={images[i]}
-              x={cap.x}
-              y={cap.y}
-              width={cap.width}
-              height={cap.height}
+              x={cap.x * scale}
+              y={cap.y * scale}
+              width={cap.width * scale}
+              height={cap.height * scale}
             />
           ))}
 
@@ -266,10 +318,10 @@ function App() {
               <KonvaImage
                 key={`clip-${i}`}
                 image={images[i]}
-                x={cap.x}
-                y={cap.y}
-                width={cap.width}
-                height={cap.height}
+                x={cap.x * scale}
+                y={cap.y * scale}
+                width={cap.width * scale}
+                height={cap.height * scale}
               />
             ))}
 
