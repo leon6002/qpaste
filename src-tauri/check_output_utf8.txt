@@ -1,0 +1,184 @@
+﻿cargo :     Checking tauri-appqpaste v0.1.0 (D:\pr
+ojects\qpaste\src-tauri)
+所在位置 行:1 字符: 1
++ cargo check 2>&1 | Out-File -Encoding utf8 check
+_output_utf8.txt
++ ~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (     
+   Checking ta...aste\src-tauri):String) [],     R
+emoteException
+    + FullyQualifiedErrorId : NativeCommandErro   
+ r
+ 
+warning: unused import: `image::RgbaImage`
+ --> src\lib.rs:2:5
+  |
+2 | use image::RgbaImage;
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[wa
+rn(unused)]`) on by default
+
+error[E0107]: missing generics for struct `CheckMe
+nuItem`
+   --> src\lib.rs:19:11
+    |
+ 19 |     high: CheckMenuItem,
+    |           ^^^^^^^^^^^^^ expected 1 generic a
+rgument
+    |
+note: struct defined here, with 1 generic paramete
+r: `R`
+   --> C:\Users\gulon\.cargo\registry\src\index.cr
+ates.io-1949cf8c6b5b557f\tauri-2.9.4\src\menu\mod.
+rs:161:3
+    |
+144 | / gen_wrappers!(
+145 | |   /// A type that is either a menu bar on 
+the window
+146 | |   /// on Windows and Linux or as a global 
+menu in the menubar on macOS.
+147 | |   ///
+...   |
+161 | |   CheckMenuItem(CheckMenuItemInner, Check)
+,
+    | |   ^^^^^^^^^^^^^
+...   |
+164 | |   IconMenuItem(IconMenuItemInner, Icon)
+165 | | );
+    | |_-
+help: add missing generic argument
+    |
+ 19 |     high: CheckMenuItem<R>,
+    |                        +++
+
+error[E0107]: missing generics for struct `CheckMe
+nuItem`
+   --> src\lib.rs:20:13
+    |
+ 20 |     medium: CheckMenuItem,
+    |             ^^^^^^^^^^^^^ expected 1 generic
+ argument
+    |
+note: struct defined here, with 1 generic paramete
+r: `R`
+   --> C:\Users\gulon\.cargo\registry\src\index.cr
+ates.io-1949cf8c6b5b557f\tauri-2.9.4\src\menu\mod.
+rs:161:3
+    |
+144 | / gen_wrappers!(
+145 | |   /// A type that is either a menu bar on 
+the window
+146 | |   /// on Windows and Linux or as a global 
+menu in the menubar on macOS.
+147 | |   ///
+...   |
+161 | |   CheckMenuItem(CheckMenuItemInner, Check)
+,
+    | |   ^^^^^^^^^^^^^
+...   |
+164 | |   IconMenuItem(IconMenuItemInner, Icon)
+165 | | );
+    | |_-
+help: add missing generic argument
+    |
+ 20 |     medium: CheckMenuItem<R>,
+    |                          +++
+
+error[E0107]: missing generics for struct `CheckMe
+nuItem`
+   --> src\lib.rs:21:10
+    |
+ 21 |     low: CheckMenuItem,
+    |          ^^^^^^^^^^^^^ expected 1 generic ar
+gument
+    |
+note: struct defined here, with 1 generic paramete
+r: `R`
+   --> C:\Users\gulon\.cargo\registry\src\index.cr
+ates.io-1949cf8c6b5b557f\tauri-2.9.4\src\menu\mod.
+rs:161:3
+    |
+144 | / gen_wrappers!(
+145 | |   /// A type that is either a menu bar on 
+the window
+146 | |   /// on Windows and Linux or as a global 
+menu in the menubar on macOS.
+147 | |   ///
+...   |
+161 | |   CheckMenuItem(CheckMenuItemInner, Check)
+,
+    | |   ^^^^^^^^^^^^^
+...   |
+164 | |   IconMenuItem(IconMenuItemInner, Icon)
+165 | | );
+    | |_-
+help: add missing generic argument
+    |
+ 21 |     low: CheckMenuItem<R>,
+    |                       +++
+
+error[E0308]: mismatched types
+   --> src\lib.rs:71:25
+    |
+ 67 |                     .encode(
+    |                      ------ arguments to thi
+s method are incorrect
+...
+ 71 |                         image::ColorType::Rg
+ba8,
+    |                         ^^^^^^^^^^^^^^^^^^^^
+^^^ expected `ExtendedColorType`, found `ColorType
+`
+    |
+note: method defined here
+   --> C:\Users\gulon\.cargo\registry\src\index.cr
+ates.io-1949cf8c6b5b557f\image-0.25.9\src\codecs\j
+peg\encoder.rs:479:12
+    |
+479 |     pub fn encode(
+    |            ^^^^^^
+help: call `Into::into` on this expression to conv
+ert `ColorType` into `ExtendedColorType`
+    |
+ 71 |                         image::ColorType::Rg
+ba8.into(),
+    |                                             
+   +++++++
+
+error[E0308]: mismatched types
+   --> src\lib.rs:85:25
+    |
+ 81 |                     .encode(
+    |                      ------ arguments to thi
+s method are incorrect
+...
+ 85 |                         image::ColorType::Rg
+ba8,
+    |                         ^^^^^^^^^^^^^^^^^^^^
+^^^ expected `ExtendedColorType`, found `ColorType
+`
+    |
+note: method defined here
+   --> C:\Users\gulon\.cargo\registry\src\index.cr
+ates.io-1949cf8c6b5b557f\image-0.25.9\src\codecs\j
+peg\encoder.rs:479:12
+    |
+479 |     pub fn encode(
+    |            ^^^^^^
+help: call `Into::into` on this expression to conv
+ert `ColorType` into `ExtendedColorType`
+    |
+ 85 |                         image::ColorType::Rg
+ba8.into(),
+    |                                             
+   +++++++
+
+Some errors have detailed explanations: E0107, E03
+08.
+For more information about an error, try `rustc --
+explain E0107`.
+warning: `tauri-appqpaste` (lib) generated 1 warni
+ng
+error: could not compile `tauri-appqpaste` (lib) d
+ue to 5 previous errors; 1 warning emitted

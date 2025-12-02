@@ -1,18 +1,33 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from 'react';
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
-import { Stage, Layer, Image as KonvaImage, Rect, Group, Arrow, Text, Line } from "react-konva";
-import { X, Save, Copy as CopyIcon, Square, ArrowRight, Type, Undo } from "lucide-react";
-import { save } from '@tauri-apps/plugin-dialog';
-import "./App.css";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { save } from "@tauri-apps/plugin-dialog";
+import { Stage, Layer, Rect, Image as KonvaImage, Arrow, Group, Text, Line } from 'react-konva';
+import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save } from 'lucide-react';
+import './App.css';
 
-interface MonitorCapture {
+interface Capture {
   x: number;
   y: number;
   width: number;
   height: number;
-  image_base64: string;
+  image_path: string;
+}
+
+interface Annotation {
+  id: string;
+  type: 'rect' | 'arrow' | 'text';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  points?: number[];
+  color: string;
+  text?: string;
+  fontSize?: number;
+  scaleX?: number;
+  scaleY?: number;
 }
 
 interface Selection {
@@ -23,78 +38,77 @@ interface Selection {
   isSelecting: boolean;
 }
 
-type Tool = 'select' | 'rect' | 'arrow' | 'text';
-
-interface Annotation {
-  type: 'rect' | 'arrow' | 'text';
-  x: number;
-  y: number;
-  width?: number;
-  height?: number;
-  points?: number[];
-  color: string;
-  text?: string;
-  fontSize?: number;
-}
-
-interface TextInput {
-  x: number;
-  y: number;
-  value: string;
-}
-
 function App() {
-  const [captures, setCaptures] = useState<MonitorCapture[]>([]);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
-  const [selection, setSelection] = useState<Selection>({
-    startX: 0,
-    startY: 0,
-    endX: 0,
-    endY: 0,
-    isSelecting: false,
-  });
+  const [captures, setCaptures] = useState<Capture[]>([]);
   const [isReady, setIsReady] = useState(false);
-  const [showToolbar, setShowToolbar] = useState(false);
-  const [tool, setTool] = useState<Tool>('select');
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [currentAnnotation, setCurrentAnnotation] = useState<Annotation | null>(null);
-
-  const [color, setColor] = useState('red');
+  const [tool, setTool] = useState<'select' | 'rect' | 'arrow' | 'text'>('select');
+  const [color, setColor] = useState('#FF0000');
+  const [selection, setSelection] = useState<Selection>({
+    startX: 0, startY: 0, endX: 0, endY: 0, isSelecting: false
+  });
+  const [showToolbar, setShowToolbar] = useState(false);
+  const [toolbarPos, setToolbarPos] = useState<{ x: number, y: number } | null>(null);
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [textInput, setTextInput] = useState<{ x: number, y: number, value: string } | null>(null);
   const [fontSize, setFontSize] = useState(16);
-  const [textInput, setTextInput] = useState<TextInput | null>(null);
   const [pendingText, setPendingText] = useState<string | null>(null);
   const [cursorPos, setCursorPos] = useState<{ x: number, y: number } | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const stageRef = useRef<any>(null);
   const borderRef = useRef<any>(null);
 
   const captureScreen = async () => {
     try {
-      setIsReady(false);
-      const result = await invoke<MonitorCapture[]>("capture_screen");
-      setCaptures(result);
+      console.log("Capturing screen...");
+      const captures: any[] = await invoke("capture_screen");
+      console.log("Captures:", captures);
 
-      const loadedImages = await Promise.all(
-        result.map((cap) => {
-          return new Promise<HTMLImageElement>((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.src = cap.image_base64;
-          });
-        })
-      );
-      setImages(loadedImages);
+      const newCaptures: Capture[] = [];
+      const newImages: HTMLImageElement[] = [];
+
+      for (const cap of captures) {
+        const img = new Image();
+        img.src = cap.image_base64;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+        });
+
+        newImages.push(img);
+        newCaptures.push({
+          x: cap.x,
+          y: cap.y,
+          width: cap.width,
+          height: cap.height,
+          image_path: cap.image_base64
+        });
+      }
+
+      setImages(newImages);
+      setCaptures(newCaptures);
 
       // Reset state
-      setSelection({ startX: 0, startY: 0, endX: 0, endY: 0, isSelecting: false });
       setAnnotations([]);
       setCurrentAnnotation(null);
+      setSelection({
+        startX: 0,
+        startY: 0,
+        endX: 0,
+        endY: 0,
+        isSelecting: false
+      });
       setTool('select');
       setTextInput(null);
       setPendingText(null);
       setShowToolbar(false);
 
       setIsReady(true);
+      await getCurrentWindow().show();
+      await getCurrentWindow().setFocus();
     } catch (e) {
       console.error("Failed to capture screen:", e);
     }
@@ -145,12 +159,14 @@ function App() {
       if (pendingText) {
         // Place stamp immediately
         setAnnotations([...annotations, {
+          id: crypto.randomUUID(),
           type: 'text',
           x: pos.x,
           y: pos.y,
           text: pendingText,
           color: color,
-          fontSize: fontSize
+          fontSize: fontSize,
+          width: fontSize * pendingText.length // Initial width estimate
         }]);
         // Keep pendingText for multiple stamps
       } else {
@@ -165,6 +181,7 @@ function App() {
     } else {
       if (tool === 'rect') {
         setCurrentAnnotation({
+          id: crypto.randomUUID(),
           type: 'rect',
           x: pos.x,
           y: pos.y,
@@ -174,6 +191,7 @@ function App() {
         });
       } else if (tool === 'arrow') {
         setCurrentAnnotation({
+          id: crypto.randomUUID(),
           type: 'arrow',
           x: 0, y: 0,
           points: [pos.x, pos.y, pos.x, pos.y],
@@ -212,10 +230,32 @@ function App() {
     }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: any) => {
     if (tool === 'select') {
       if (selection.isSelecting) {
         setSelection((prev) => ({ ...prev, isSelecting: false }));
+
+        // Calculate toolbar position based on mouse cursor
+        const stage = e.target.getStage();
+        const pos = stage.getPointerPosition();
+        const padding = 20;
+        const toolbarWidth = 150; // Approximate
+        const toolbarHeight = 150; // Approximate
+
+        let tx = pos.x + padding;
+        let ty = pos.y + padding;
+
+        // Check right edge
+        if (tx + toolbarWidth > window.innerWidth) {
+          tx = pos.x - toolbarWidth - padding;
+        }
+
+        // Check bottom edge
+        if (ty + toolbarHeight > window.innerHeight) {
+          ty = pos.y - toolbarHeight - padding;
+        }
+
+        setToolbarPos({ x: tx, y: ty });
         setShowToolbar(true);
       }
     } else {
@@ -224,6 +264,16 @@ function App() {
         setCurrentAnnotation(null);
       }
     }
+  };
+
+  const handleToolbarMouseDown = (e: React.MouseEvent) => {
+    if (!toolbarPos) return;
+    setIsDraggingToolbar(true);
+    setDragOffset({
+      x: e.clientX - toolbarPos.x,
+      y: e.clientY - toolbarPos.y
+    });
+    e.stopPropagation(); // Prevent stage from receiving click
   };
 
   const getSelectionRect = () => {
@@ -242,7 +292,7 @@ function App() {
     if (borderRef.current) borderRef.current.hide();
 
     const dataUrl = stageRef.current.toDataURL({
-      x, y, width, height, pixelRatio: 1
+      x, y, width, height, pixelRatio: window.devicePixelRatio
     });
 
     if (borderRef.current) borderRef.current.show();
@@ -264,7 +314,7 @@ function App() {
     if (borderRef.current) borderRef.current.hide();
 
     const dataUrl = stageRef.current.toDataURL({
-      x, y, width, height, pixelRatio: 1
+      x, y, width, height, pixelRatio: window.devicePixelRatio
     });
 
     if (borderRef.current) borderRef.current.show();
@@ -305,22 +355,62 @@ function App() {
         handleUndo();
       }
     };
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDraggingToolbar) {
+        setToolbarPos({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleGlobalMouseUp = () => {
+      setIsDraggingToolbar(false);
+    };
+
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("mousemove", handleGlobalMouseMove);
+    window.addEventListener("mouseup", handleGlobalMouseUp);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("mousemove", handleGlobalMouseMove);
+      window.removeEventListener("mouseup", handleGlobalMouseUp);
     };
-  }, []);
+  }, [isDraggingToolbar, dragOffset]);
+
+
 
   const handleTextSubmit = () => {
     if (textInput && textInput.value.trim()) {
-      setAnnotations([...annotations, {
-        type: 'text',
-        x: textInput.x,
-        y: textInput.y,
-        text: textInput.value,
-        color: color,
-        fontSize: fontSize
-      }]);
+      if (editingId) {
+        // Update existing annotation
+        const idx = annotations.findIndex(a => a.id === editingId);
+        if (idx >= 0) {
+          const newAnns = [...annotations];
+          newAnns[idx] = {
+            ...newAnns[idx],
+            text: textInput.value,
+            // Update height estimation if needed, though usually handled by render
+          };
+          setAnnotations(newAnns);
+        }
+        setEditingId(null);
+      } else {
+        // Create new annotation
+        setAnnotations([...annotations, {
+          id: crypto.randomUUID(),
+          type: 'text',
+          x: textInput.x,
+          y: textInput.y,
+          text: textInput.value,
+          color: color,
+          fontSize: fontSize,
+          width: 200 // Default width for text box
+        }]);
+      }
+    } else if (editingId) {
+      // If empty text on edit, maybe delete? or just cancel edit
+      setEditingId(null);
     }
     setTextInput(null);
   };
@@ -337,8 +427,8 @@ function App() {
       <div
         style={{
           position: 'fixed',
-          top: 20,
-          right: 20,
+          top: 10,
+          right: 10,
           zIndex: 9999,
           cursor: 'pointer',
           background: 'rgba(0,0,0,0.5)',
@@ -352,7 +442,7 @@ function App() {
         onClick={handleClose}
         title="Close (Esc)"
       >
-        <X size={24} />
+        <X size={16} />
       </div>
 
       <Stage
@@ -396,16 +486,98 @@ function App() {
               />
             ))}
 
-            {annotations.map((ann, i) => {
+            {annotations.map((ann) => {
+              const commonProps = {
+                key: ann.id,
+                name: `ann-${ann.id}`,
+                draggable: true,
+                onMouseDown: (e: any) => {
+                  e.cancelBubble = true;
+                  if (textInput) {
+                    handleTextSubmit();
+                  }
+                },
+                onClick: (e: any) => {
+                  e.cancelBubble = true;
+                },
+                onDragEnd: (e: any) => {
+                  const idx = annotations.findIndex(a => a.id === ann.id);
+                  if (idx >= 0) {
+                    const newAnns = [...annotations];
+                    newAnns[idx] = {
+                      ...newAnns[idx],
+                      x: e.target.x(),
+                      y: e.target.y()
+                    };
+                    setAnnotations(newAnns);
+                  }
+                }
+              };
+
               if (ann.type === 'rect') {
-                return <Rect key={i} x={ann.x} y={ann.y} width={ann.width} height={ann.height} stroke={ann.color} strokeWidth={2} />;
+                return (
+                  <Rect
+                    {...commonProps}
+                    x={ann.x} y={ann.y}
+                    width={ann.width} height={ann.height}
+                    stroke={ann.color} strokeWidth={2}
+                    scaleX={ann.scaleX} scaleY={ann.scaleY}
+                    onTransformEnd={(e) => {
+                      const node = e.target;
+                      const scaleX = node.scaleX();
+                      const scaleY = node.scaleY();
+                      node.scaleX(1);
+                      node.scaleY(1);
+                      const idx = annotations.findIndex(a => a.id === ann.id);
+                      if (idx >= 0) {
+                        const newAnns = [...annotations];
+                        newAnns[idx] = {
+                          ...newAnns[idx],
+                          x: node.x(),
+                          y: node.y(),
+                          width: Math.max(5, node.width() * scaleX),
+                          height: Math.max(5, node.height() * scaleY),
+                        };
+                        setAnnotations(newAnns);
+                      }
+                    }}
+                  />
+                );
               } else if (ann.type === 'arrow') {
-                return <Arrow key={i} points={ann.points || []} stroke={ann.color} strokeWidth={2} fill={ann.color} />;
+                return <Arrow {...commonProps} points={ann.points || []} stroke={ann.color} strokeWidth={2} fill={ann.color} />;
               } else if (ann.type === 'text') {
-                return <Text key={i} x={ann.x} y={ann.y} text={ann.text} fontSize={ann.fontSize} fill={ann.color} />;
+                return (
+                  <Group
+                    key={ann.id}
+                    name={`ann-${ann.id}`}
+                    x={ann.x} y={ann.y}
+                    draggable
+                    onMouseDown={commonProps.onMouseDown}
+                    onClick={(e) => {
+                      e.cancelBubble = true;
+                      setEditingId(ann.id);
+                      setTextInput({
+                        x: ann.x,
+                        y: ann.y,
+                        value: ann.text || ''
+                      });
+                    }}
+                    onDragEnd={commonProps.onDragEnd}
+                  >
+                    <Text
+                      text={ann.text}
+                      fontSize={ann.fontSize}
+                      fill={ann.color}
+                      name={`text-${ann.id}`}
+                      visible={editingId !== ann.id}
+                    />
+                  </Group>
+                );
               }
               return null;
             })}
+
+
             {currentAnnotation && (
               currentAnnotation.type === 'rect' ?
                 <Rect x={currentAnnotation.x} y={currentAnnotation.y} width={currentAnnotation.width} height={currentAnnotation.height} stroke={currentAnnotation.color} strokeWidth={2} /> :
@@ -424,158 +596,173 @@ function App() {
             listening={false}
           />
 
-          {cursorPos && !showToolbar && (
-            <>
-              <Line
-                points={[0, cursorPos.y, window.innerWidth, cursorPos.y]}
-                stroke="red"
-                strokeWidth={1}
-                dash={[4, 4]}
-                listening={false}
-              />
-              <Line
-                points={[cursorPos.x, 0, cursorPos.x, window.innerHeight]}
-                stroke="red"
-                strokeWidth={1}
-                dash={[4, 4]}
-                listening={false}
-              />
-              <Text
-                x={cursorPos.x + 10}
-                y={cursorPos.y + 10}
-                text={`(${Math.round(cursorPos.x)}, ${Math.round(cursorPos.y)})`}
-                fontSize={12}
-                fill="white"
-                shadowColor="black"
-                shadowBlur={2}
-                listening={false}
-              />
-            </>
-          )}
-        </Layer>
-      </Stage>
+          {
+            cursorPos && !showToolbar && (
+              <>
+                <Line
+                  points={[0, cursorPos.y, window.innerWidth, cursorPos.y]}
+                  stroke="red"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                  listening={false}
+                />
+                <Line
+                  points={[cursorPos.x, 0, cursorPos.x, window.innerHeight]}
+                  stroke="red"
+                  strokeWidth={1}
+                  dash={[4, 4]}
+                  listening={false}
+                />
+                <Text
+                  x={cursorPos.x + 10}
+                  y={cursorPos.y + 10}
+                  text={`(${Math.round(cursorPos.x)}, ${Math.round(cursorPos.y)})`}
+                  fontSize={12}
+                  fill="white"
+                  shadowColor="black"
+                  shadowBlur={2}
+                  listening={false}
+                />
+              </>
+            )
+          }
+        </Layer >
+      </Stage >
 
-      {showToolbar && width > 0 && (
-        <div style={{
-          position: 'absolute',
-          left: x + width - 300,
-          top: y + height + 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          background: 'white',
-          padding: '8px',
-          borderRadius: '4px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-          zIndex: 1000
-        }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={() => { setTool('rect'); setPendingText(null); }} title="Rectangle" style={{ padding: 8, background: tool === 'rect' ? '#eee' : 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <Square size={20} />
-            </button>
-            <button onClick={() => { setTool('arrow'); setPendingText(null); }} title="Arrow" style={{ padding: 8, background: tool === 'arrow' ? '#eee' : 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <ArrowRight size={20} />
-            </button>
-            <button onClick={() => { setTool('text'); setPendingText(null); }} title="Text" style={{ padding: 8, background: tool === 'text' && !pendingText ? '#eee' : 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <Type size={20} />
-            </button>
-            <div style={{ width: 1, height: 20, background: '#ccc' }} />
-            <div style={{ display: 'flex', gap: '2px' }}>
+      {showToolbar && width > 0 && toolbarPos && (
+        <div
+          className="toolbar"
+          style={{
+            left: toolbarPos.x,
+            top: toolbarPos.y,
+            cursor: isDraggingToolbar ? 'grabbing' : 'grab'
+          }}
+          onMouseDown={handleToolbarMouseDown}
+        >
+          {/* Row 1: Tools & Actions */}
+          <div className="toolbar-row">
+            <div className="toolbar-group">
+              <button
+                className={`tool-btn ${tool === 'rect' ? 'active' : ''}`}
+                onClick={() => { setTool('rect'); setPendingText(null); }}
+                title="Rectangle"
+              >
+                <Square size={14} />
+              </button>
+              <button
+                className={`tool-btn ${tool === 'arrow' ? 'active' : ''}`}
+                onClick={() => { setTool('arrow'); setPendingText(null); }}
+                title="Arrow"
+              >
+                <ArrowRight size={14} />
+              </button>
+              <button
+                className={`tool-btn ${tool === 'text' && !pendingText ? 'active' : ''}`}
+                onClick={() => { setTool('text'); setPendingText(null); }}
+                title="Text"
+              >
+                <Type size={14} />
+              </button>
+            </div>
+
+            <div className="divider" />
+
+            <div className="toolbar-group">
+              <button className="tool-btn" onClick={handleUndo} title="Undo (Ctrl+Z)">
+                <Undo size={14} />
+              </button>
+              <button className="tool-btn" onClick={handleCopy} title="Copy">
+                <CopyIcon size={14} />
+              </button>
+              <button className="tool-btn" onClick={handleSave} title="Save">
+                <Save size={14} />
+              </button>
+              <div style={{ width: '12px' }} /> {/* Spacer */}
+              <button className="tool-btn danger" onClick={handleClose} title="Close">
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div className="divider-h" />
+
+          {/* Row 2: Colors & Settings */}
+          <div className="toolbar-row">
+            <div style={{ display: 'flex', gap: '6px' }}>
               {colors.map(c => (
                 <div
                   key={c}
+                  className={`color-swatch ${color === c ? 'active' : ''}`}
                   onClick={() => setColor(c)}
-                  style={{
-                    width: 20,
-                    height: 20,
-                    background: c,
-                    border: color === c ? '2px solid #333' : '1px solid #ccc',
-                    cursor: 'pointer'
-                  }}
+                  style={{ background: c }}
                   title={c}
                 />
               ))}
             </div>
-            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} style={{ width: 30, height: 30, border: 'none', cursor: 'pointer', padding: 0 }} />
-            <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))} style={{ padding: 4, borderRadius: 4, border: '1px solid #ccc' }}>
-              <option value={12}>12</option>
-              <option value={16}>16</option>
-              <option value={20}>20</option>
-              <option value={24}>24</option>
-              <option value={32}>32</option>
+
+            <div className="divider" />
+
+            <select
+              className="font-select"
+              value={fontSize}
+              onChange={(e) => setFontSize(Number(e.target.value))}
+            >
+              <option value={10}>10px</option>
+              <option value={12}>12px</option>
+              <option value={14}>14px</option>
+              <option value={16}>16px</option>
+              <option value={20}>20px</option>
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          {/* Row 3: Stamps */}
+          <div className="toolbar-row" style={{ justifyContent: 'flex-start', flexWrap: 'wrap', gap: '6px' }}>
             {['①', '②', '③', '④', '⑤', '⑧'].map(char => (
               <button
                 key={char}
+                className={`stamp-btn ${pendingText === char ? 'active' : ''}`}
                 onClick={() => { setTool('text'); setPendingText(char); }}
-                style={{
-                  padding: '4px 8px',
-                  background: pendingText === char ? '#eee' : 'transparent',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  fontSize: '14px'
-                }}
               >
                 {char}
               </button>
             ))}
           </div>
-
-          <div style={{ height: 1, background: '#ccc', margin: '4px 0' }} />
-
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-            <button onClick={handleUndo} title="Undo (Ctrl+Z)" style={{ padding: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <Undo size={20} />
-            </button>
-            <button onClick={handleCopy} title="Copy" style={{ padding: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <CopyIcon size={20} />
-            </button>
-            <button onClick={handleSave} title="Save" style={{ padding: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <Save size={20} />
-            </button>
-            <button onClick={handleClose} title="Close" style={{ padding: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: '#333' }}>
-              <X size={20} />
-            </button>
-          </div>
         </div>
       )}
 
-      {textInput && (
-        <textarea
-          value={textInput.value}
-          onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
-          // onBlur={handleTextSubmit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleTextSubmit();
-            }
-          }}
-          style={{
-            position: 'absolute',
-            left: textInput.x,
-            top: textInput.y,
-            fontSize: `${fontSize}px`,
-            color: color,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            minWidth: '100px',
-            minHeight: '1.5em',
-            zIndex: 2000,
-            resize: 'none',
-            overflow: 'hidden',
-            padding: '4px',
-            borderRadius: '4px',
-            // boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-          }}
-          autoFocus
-        />
-      )}
+      {
+        textInput && (
+          <textarea
+            value={textInput.value}
+            onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
+            // onBlur={handleTextSubmit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleTextSubmit();
+              }
+            }}
+            style={{
+              position: 'absolute',
+              left: textInput.x,
+              top: textInput.y,
+              fontSize: `${fontSize}px`,
+              color: color,
+              background: 'transparent',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              outline: 'none',
+              minWidth: '300px',
+              minHeight: '1.5em',
+              zIndex: 2000,
+              overflow: 'hidden',
+              padding: '0',
+              borderRadius: '4px',
+              // boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+            }}
+            autoFocus
+          />
+        )
+      }
     </>
   );
 }

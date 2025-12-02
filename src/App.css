@@ -14,4 +14,166 @@ body {
   height: 100vh;
   overflow: hidden;
   background-color: transparent;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Modern Toolbar */
+.toolbar {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  z-index: 1000;
+  min-width: 140px;
+}
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: space-between;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 2px;
+  border-radius: 8px;
+}
+
+.divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 2px;
+}
+
+.divider-h {
+  height: 1px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Tool Buttons */
+.tool-btn {
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  padding: 4px;
+  cursor: pointer;
+  color: #555;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
+  transform: translateY(-1px);
+}
+
+.tool-btn.active {
+  background: #007AFF;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+}
+
+.tool-btn.danger:hover {
+  background: rgba(255, 59, 48, 0.1);
+  color: #FF3B30;
+}
+
+/* Color Swatches */
+.color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  position: relative;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+  z-index: 1;
+}
+
+.color-swatch.active {
+  transform: scale(1.15);
+  box-shadow: 0 0 0 2px #007AFF, 0 4px 8px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+}
+
+/* Stamp Buttons */
+.stamp-btn {
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  border-radius: 6px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.2s ease;
+  min-width: 24px;
+}
+
+.stamp-btn:hover {
+  background: #f5f5f7;
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.stamp-btn.active {
+  background: #007AFF;
+  color: white;
+  border-color: #007AFF;
+}
+
+/* Inputs */
+.font-select {
+  padding: 2px 4px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: white;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.font-select:hover {
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.font-select:focus {
+  border-color: #007AFF;
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

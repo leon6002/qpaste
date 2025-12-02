@@ -1,10 +1,29 @@
 use base64::{engine::general_purpose, Engine as _};
-use image::RgbaImage;
 use std::io::Cursor;
 use std::io::Write;
-use tauri::{AppHandle, Emitter, Manager};
+use std::sync::Mutex;
+use tauri::menu::{CheckMenuItem, Menu, MenuItem, Submenu};
+use tauri::{AppHandle, Emitter, Manager, Wry};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use xcap::Monitor;
+
+#[derive(Clone, Copy, PartialEq, Debug)]
+enum ImageQuality {
+    High,
+    Medium,
+    Low,
+}
+
+struct QualityMenuItems {
+    high: CheckMenuItem<Wry>,
+    medium: CheckMenuItem<Wry>,
+    low: CheckMenuItem<Wry>,
+}
+
+struct AppState {
+    quality: Mutex<ImageQuality>,
+    menu_items: Mutex<Option<QualityMenuItems>>,
+}
 
 #[derive(serde::Serialize)]
 struct MonitorCapture {
@@ -12,27 +31,69 @@ struct MonitorCapture {
     y: i32,
     width: u32,
     height: u32,
+    scale_factor: f32,
     image_base64: String,
 }
 
 #[tauri::command]
-async fn capture_screen() -> Result<Vec<MonitorCapture>, String> {
+async fn capture_screen(state: tauri::State<'_, AppState>) -> Result<Vec<MonitorCapture>, String> {
     let monitors = Monitor::all().map_err(|e| e.to_string())?;
     let mut captures = Vec::new();
+    let quality = *state.quality.lock().unwrap();
 
     for monitor in monitors {
         let x = monitor.x();
         let y = monitor.y();
-        let width = monitor.width();
-        let height = monitor.height();
+        let scale_factor = monitor.scale_factor();
 
         let image = monitor.capture_image().map_err(|e| e.to_string())?;
+        let width = image.width();
+        let height = image.height();
 
-        // Convert RgbaImage to PNG bytes
+        println!(
+            "Monitor: x={}, y={}, scale={}, image={}x{}",
+            x, y, scale_factor, width, height
+        );
+
         let mut bytes: Vec<u8> = Vec::new();
-        image
-            .write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Png)
-            .map_err(|e| e.to_string())?;
+        let mime_type;
+
+        match quality {
+            ImageQuality::High => {
+                image
+                    .write_to(&mut Cursor::new(&mut bytes), image::ImageFormat::Png)
+                    .map_err(|e| e.to_string())?;
+                mime_type = "image/png";
+            }
+            ImageQuality::Medium => {
+                let mut cursor = Cursor::new(&mut bytes);
+                let mut encoder =
+                    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 75);
+                encoder
+                    .encode(
+                        image.as_raw(),
+                        image.width(),
+                        image.height(),
+                        image::ColorType::Rgba8.into(),
+                    )
+                    .map_err(|e| e.to_string())?;
+                mime_type = "image/jpeg";
+            }
+            ImageQuality::Low => {
+                let mut cursor = Cursor::new(&mut bytes);
+                let mut encoder =
+                    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut cursor, 50);
+                encoder
+                    .encode(
+                        image.as_raw(),
+                        image.width(),
+                        image.height(),
+                        image::ColorType::Rgba8.into(),
+                    )
+                    .map_err(|e| e.to_string())?;
+                mime_type = "image/jpeg";
+            }
+        }
 
         let base64_str = general_purpose::STANDARD.encode(&bytes);
 
@@ -41,7 +102,8 @@ async fn capture_screen() -> Result<Vec<MonitorCapture>, String> {
             y,
             width,
             height,
-            image_base64: format!("data:image/png;base64,{}", base64_str),
+            scale_factor,
+            image_base64: format!("data:{};base64,{}", mime_type, base64_str),
         });
     }
 
@@ -50,7 +112,13 @@ async fn capture_screen() -> Result<Vec<MonitorCapture>, String> {
 
 #[tauri::command]
 async fn copy_to_clipboard(base64_image: String) -> Result<(), String> {
-    let base64_clean = base64_image.replace("data:image/png;base64,", "");
+    // Handle both png and jpeg prefixes
+    let base64_clean = if base64_image.starts_with("data:image/png;base64,") {
+        base64_image.replace("data:image/png;base64,", "")
+    } else {
+        base64_image.replace("data:image/jpeg;base64,", "")
+    };
+
     let bytes = general_purpose::STANDARD
         .decode(base64_clean)
         .map_err(|e| e.to_string())?;
@@ -73,7 +141,12 @@ async fn copy_to_clipboard(base64_image: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn save_image(path: String, base64_image: String) -> Result<(), String> {
-    let base64_clean = base64_image.replace("data:image/png;base64,", "");
+    let base64_clean = if base64_image.starts_with("data:image/png;base64,") {
+        base64_image.replace("data:image/png;base64,", "")
+    } else {
+        base64_image.replace("data:image/jpeg;base64,", "")
+    };
+
     let bytes = general_purpose::STANDARD
         .decode(base64_clean)
         .map_err(|e| e.to_string())?;
@@ -89,9 +162,24 @@ fn toggle_window(app: &AppHandle) {
         } else {
             // Trigger capture before showing
             let _ = window.emit("start_capture", ());
-            let _ = window.show();
-            let _ = window.set_focus();
+            // Window will be shown by frontend after capture is done
         }
+    }
+}
+
+fn update_quality_menu(app: &AppHandle, quality: ImageQuality) {
+    let state = app.state::<AppState>();
+    let guard = state.menu_items.lock().unwrap();
+    if let Some(menu_items) = guard.as_ref() {
+        let _ = menu_items
+            .high
+            .set_checked(matches!(quality, ImageQuality::High));
+        let _ = menu_items
+            .medium
+            .set_checked(matches!(quality, ImageQuality::Medium));
+        let _ = menu_items
+            .low
+            .set_checked(matches!(quality, ImageQuality::Low));
     }
 }
 
@@ -100,6 +188,10 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(AppState {
+            quality: Mutex::new(ImageQuality::High),
+            menu_items: Mutex::new(None),
+        })
         .setup(|app| {
             // Initialize Global Shortcut (Alt+Q and F1)
             let app_handle = app.handle().clone();
@@ -128,9 +220,34 @@ pub fn run() {
             app.global_shortcut().register(shortcut_f1)?;
 
             // System Tray
-            let quit_i = tauri::menu::MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let show_i = tauri::menu::MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let menu = tauri::menu::Menu::with_items(app, &[&show_i, &quit_i])?;
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+
+            let quality_high =
+                CheckMenuItem::with_id(app, "quality_high", "High", true, true, None::<&str>)?;
+            let quality_medium =
+                CheckMenuItem::with_id(app, "quality_medium", "Medium", true, false, None::<&str>)?;
+            let quality_low =
+                CheckMenuItem::with_id(app, "quality_low", "Low", true, false, None::<&str>)?;
+
+            let quality_menu = Submenu::with_items(
+                app,
+                "Quality",
+                true,
+                &[&quality_high, &quality_medium, &quality_low],
+            )?;
+
+            // Store menu items in state
+            {
+                let state = app.state::<AppState>();
+                *state.menu_items.lock().unwrap() = Some(QualityMenuItems {
+                    high: quality_high.clone(),
+                    medium: quality_medium.clone(),
+                    low: quality_low.clone(),
+                });
+            }
+
+            let menu = Menu::with_items(app, &[&show_i, &quality_menu, &quit_i])?;
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -142,6 +259,21 @@ pub fn run() {
                     }
                     "show" => {
                         toggle_window(app);
+                    }
+                    "quality_high" => {
+                        let state = app.state::<AppState>();
+                        *state.quality.lock().unwrap() = ImageQuality::High;
+                        update_quality_menu(app, ImageQuality::High);
+                    }
+                    "quality_medium" => {
+                        let state = app.state::<AppState>();
+                        *state.quality.lock().unwrap() = ImageQuality::Medium;
+                        update_quality_menu(app, ImageQuality::Medium);
+                    }
+                    "quality_low" => {
+                        let state = app.state::<AppState>();
+                        *state.quality.lock().unwrap() = ImageQuality::Low;
+                        update_quality_menu(app, ImageQuality::Low);
                     }
                     _ => {}
                 })
