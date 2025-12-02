@@ -39,6 +39,8 @@ interface Selection {
 }
 
 function App() {
+  const fontFamily = 'sans-serif';
+  const lineHeight = 1.2;
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [captures, setCaptures] = useState<Capture[]>([]);
   const [isReady, setIsReady] = useState(false);
@@ -567,6 +569,8 @@ function App() {
                     <Text
                       text={ann.text}
                       fontSize={ann.fontSize}
+                      fontFamily={fontFamily}
+                      lineHeight={lineHeight}
                       fill={ann.color}
                       name={`text-${ann.id}`}
                       visible={editingId !== ann.id}
@@ -712,6 +716,20 @@ function App() {
               <option value={14}>14px</option>
               <option value={16}>16px</option>
               <option value={20}>20px</option>
+              <option value={24}>24px</option>
+              <option value={28}>28px</option>
+              <option value={32}>32px</option>
+              <option value={36}>36px</option>
+              <option value={40}>40px</option>
+              <option value={44}>44px</option>
+              <option value={48}>48px</option>
+              <option value={52}>52px</option>
+              <option value={56}>56px</option>
+              <option value={60}>60px</option>
+              <option value={70}>70px</option>
+              <option value={80}>80px</option>
+              <option value={90}>90px</option>
+              <option value={100}>100px</option>
             </select>
           </div>
 
@@ -747,6 +765,8 @@ function App() {
               left: textInput.x,
               top: textInput.y,
               fontSize: `${fontSize}px`,
+              fontFamily: fontFamily,
+              lineHeight: lineHeight,
               color: color,
               background: 'transparent',
               border: '1px solid rgba(0, 0, 0, 0.1)',
