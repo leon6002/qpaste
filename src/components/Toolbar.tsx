@@ -1,5 +1,5 @@
 import React from 'react';
-import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save, ZoomIn } from 'lucide-react';
+import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save, ZoomIn, MousePointer2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -76,6 +76,13 @@ export const Toolbar = () => {
       {/* Row 1: Tools & Actions */}
       <div className="toolbar-row">
         <div className="toolbar-group">
+          <button
+            className={`tool-btn ${tool === 'select' ? 'active' : ''}`}
+            onClick={() => { setTool('select'); setPendingText(null); }}
+            title="Select / Move"
+          >
+            <MousePointer2 size={14} />
+          </button>
           <button
             className={`tool-btn ${tool === 'rect' ? 'active' : ''}`}
             onClick={() => { setTool('rect'); setPendingText(null); }}

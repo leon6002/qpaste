@@ -9,6 +9,7 @@ export const AnnotationLayer = () => {
   const setEditingId = useAppStore(state => state.setEditingId);
   const setTextInput = useAppStore(state => state.setTextInput);
   const editingId = useAppStore(state => state.editingId);
+  const tool = useAppStore(state => state.tool);
 
   const fontFamily = 'sans-serif';
   const lineHeight = 1.2;
@@ -30,7 +31,8 @@ export const AnnotationLayer = () => {
       {annotations.map((ann) => {
         const commonProps = {
           name: `ann-${ann.id}`,
-          draggable: true,
+          draggable: tool === 'select',
+          listening: tool === 'select',
           onMouseDown: (e: any) => {
             e.cancelBubble = true;
             // if (textInput) handleTextSubmit(); // Handled globally or in store
@@ -72,7 +74,8 @@ export const AnnotationLayer = () => {
               key={ann.id}
               name={`ann-${ann.id}`}
               x={ann.x} y={ann.y}
-              draggable
+              draggable={tool === 'select'}
+              listening={tool === 'select'}
               onMouseDown={commonProps.onMouseDown}
               onClick={(e) => {
                 e.cancelBubble = true;
