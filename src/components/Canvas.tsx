@@ -163,7 +163,7 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();
         const padding = 20;
-        const toolbarWidth = 150;
+        const toolbarWidth = 300;
         const toolbarHeight = 150;
 
         let tx = pos.x + padding;
