@@ -9,13 +9,18 @@ export const Magnifier = () => {
 
   if (!showMagnifier || !cursorPos || images.length === 0) return null;
 
-  // Find which capture the cursor is in
-  const captureIndex = captures.findIndex(cap => 
-    cursorPos.x >= cap.x && 
-    cursorPos.x < cap.x + cap.width && 
-    cursorPos.y >= cap.y && 
-    cursorPos.y < cap.y + cap.height
-  );
+  const dpr = window.devicePixelRatio || 1;
+  const screenX = cursorPos.x + window.screenX;
+  const screenY = cursorPos.y + window.screenY;
+
+  // Find which capture the cursor is in (compare in logical pixels)
+  const captureIndex = captures.findIndex(cap => {
+    const capX = cap.x / dpr;
+    const capY = cap.y / dpr;
+    const capW = cap.width / dpr;
+    const capH = cap.height / dpr;
+    return screenX >= capX && screenX < capX + capW && screenY >= capY && screenY < capY + capH;
+  });
 
   if (captureIndex === -1) return null;
 
@@ -24,20 +29,19 @@ export const Magnifier = () => {
 
   if (!image) return null;
 
-  const zoom = 2;
+  const zoom = 3;
   const radius = 60;
-  const offset = 20; // Distance from cursor
+  const offset = 20;
 
-  // Calculate local position in the image
-  const localX = cursorPos.x - capture.x;
-  const localY = cursorPos.y - capture.y;
+  // Calculate local position in the image (physical pixels)
+  // screenX * dpr converts logical screen coord to physical
+  // capture.x is already physical
+  const localX = screenX * dpr - capture.x;
+  const localY = screenY * dpr - capture.y;
 
-  // Position the magnifier to the bottom-right of the cursor
-  // Adjust if it goes off screen
   let mx = cursorPos.x + offset + radius;
   let my = cursorPos.y + offset + radius;
 
-  // Simple boundary check (assuming window size)
   if (mx + radius > window.innerWidth) {
     mx = cursorPos.x - offset - radius;
   }
@@ -47,7 +51,6 @@ export const Magnifier = () => {
 
   return (
     <Group x={mx} y={my}>
-      {/* Border/Shadow */}
       <Circle
         radius={radius}
         fill="white"
@@ -55,19 +58,14 @@ export const Magnifier = () => {
         shadowBlur={10}
         shadowOpacity={0.3}
       />
-      {/* Magnified Image */}
       <Circle
         radius={radius}
         fillPatternImage={image}
-        fillPatternOffset={{ 
-          x: localX - radius / zoom, 
-          y: localY - radius / zoom 
-        }}
-        fillPatternScale={{ x: zoom, y: zoom }}
+        fillPatternOffset={{ x: localX, y: localY }}
+        fillPatternScale={{ x: zoom / dpr, y: zoom / dpr }}
         stroke="white"
         strokeWidth={2}
       />
-      {/* Crosshair in the magnifier */}
       <Rect
         x={-5}
         y={-0.5}

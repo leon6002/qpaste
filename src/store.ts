@@ -103,7 +103,7 @@ export const useAppStore = create<AppState>((set) => ({
   dragOffset: { x: 0, y: 0 },
   textInput: null,
   cursorPos: null,
-  showMagnifier: false,
+  showMagnifier: true,
 
   // Setters
   setImages: (images) => set({ images }),
@@ -138,6 +138,6 @@ export const useAppStore = create<AppState>((set) => ({
     pendingText: null,
     showToolbar: false,
     editingId: null,
-    showMagnifier: false
+    showMagnifier: true
   })
 }));
