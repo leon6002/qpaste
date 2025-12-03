@@ -64,16 +64,18 @@ export const TextInput = () => {
         fontFamily: fontFamily,
         lineHeight: lineHeight,
         color: color,
-        background: 'transparent',
-        border: '1px solid rgba(0, 0, 0, 0.1)',
+        background: 'rgba(255, 255, 255, 0.8)',
+        border: '2px dashed #00AAFF',
         outline: 'none',
-        minWidth: '300px',
+        minWidth: '100px',
         minHeight: '1.5em',
         zIndex: 2000,
         overflow: 'hidden',
-        padding: '0',
+        padding: '4px',
         borderRadius: '4px',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
       }}
+      placeholder="Type here..."
       autoFocus
     />
   );
