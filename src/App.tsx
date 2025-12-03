@@ -63,8 +63,17 @@ function App() {
 
     setupListener();
 
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        await getCurrentWindow().hide();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
     return () => {
       if (unlistenFn) unlistenFn();
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
 

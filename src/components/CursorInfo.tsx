@@ -11,14 +11,14 @@ export const CursorInfo = () => {
     <Group>
       <Line
         points={[0, cursorPos.y, window.innerWidth, cursorPos.y]}
-        stroke="red"
+        stroke="white"
         strokeWidth={1}
         dash={[4, 4]}
         listening={false}
       />
       <Line
         points={[cursorPos.x, 0, cursorPos.x, window.innerHeight]}
-        stroke="red"
+        stroke="white"
         strokeWidth={1}
         dash={[4, 4]}
         listening={false}
