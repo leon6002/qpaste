@@ -1,10 +1,10 @@
 [package]
-name = "tauri-appqpaste"
-version = "0.1.0"
-description = "A Tauri App"
-authors = ["you"]
+name = "qpaste"
+version = "1.0.0"
+description = "A powerful screenshot and annotation tool built with Tauri and React."
+authors = ["leon6002"]
 edition = "2021"
-default-run = "tauri-appqpaste"
+default-run = "qpaste"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
