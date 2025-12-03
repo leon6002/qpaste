@@ -59,6 +59,8 @@ interface AppState {
   textInput: { x: number, y: number, value: string } | null;
   cursorPos: { x: number, y: number } | null;
   showMagnifier: boolean;
+  magnifierSize: number;
+  magnifierZoom: number;
   
   // Actions
   setImages: (images: HTMLImageElement[]) => void;
@@ -79,6 +81,8 @@ interface AppState {
   setTextInput: (input: { x: number, y: number, value: string } | null) => void;
   setCursorPos: (pos: { x: number, y: number } | null) => void;
   setShowMagnifier: (show: boolean) => void;
+  setMagnifierSize: (size: number) => void;
+  setMagnifierZoom: (zoom: number) => void;
   
   // Helpers
   resetState: () => void;
@@ -104,6 +108,8 @@ export const useAppStore = create<AppState>((set) => ({
   textInput: null,
   cursorPos: null,
   showMagnifier: true,
+  magnifierSize: 60,
+  magnifierZoom: 4,
 
   // Setters
   setImages: (images) => set({ images }),
@@ -128,6 +134,8 @@ export const useAppStore = create<AppState>((set) => ({
   setTextInput: (textInput) => set({ textInput }),
   setCursorPos: (cursorPos) => set({ cursorPos }),
   setShowMagnifier: (showMagnifier) => set({ showMagnifier }),
+  setMagnifierSize: (magnifierSize) => set({ magnifierSize }),
+  setMagnifierZoom: (magnifierZoom) => set({ magnifierZoom }),
   
   resetState: () => set({
     annotations: [],
@@ -138,6 +146,8 @@ export const useAppStore = create<AppState>((set) => ({
     pendingText: null,
     showToolbar: false,
     editingId: null,
-    showMagnifier: true
+    showMagnifier: true,
+    magnifierSize: 60,
+    magnifierZoom: 4
   })
 }));

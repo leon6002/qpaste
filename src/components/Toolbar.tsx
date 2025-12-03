@@ -21,6 +21,10 @@ export const Toolbar = () => {
   const selection = useAppStore(state => state.selection);
   const showMagnifier = useAppStore(state => state.showMagnifier);
   const setShowMagnifier = useAppStore(state => state.setShowMagnifier);
+  const magnifierSize = useAppStore(state => state.magnifierSize);
+  const setMagnifierSize = useAppStore(state => state.setMagnifierSize);
+  const magnifierZoom = useAppStore(state => state.magnifierZoom);
+  const setMagnifierZoom = useAppStore(state => state.setMagnifierZoom);
   const width = Math.abs(selection.endX - selection.startX);
 
   const colors = ['#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#FFFFFF', '#000000'];
@@ -143,11 +147,40 @@ export const Toolbar = () => {
           className="font-select"
           value={fontSize}
           onChange={(e) => setFontSize(Number(e.target.value))}
+          title="Font Size"
         >
           {[10, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60, 70, 80, 90, 100].map(size => (
             <option key={size} value={size}>{size}px</option>
           ))}
         </select>
+
+        {showMagnifier && (
+          <>
+            <div className="divider" />
+            <select
+              className="font-select"
+              value={magnifierZoom}
+              onChange={(e) => setMagnifierZoom(Number(e.target.value))}
+              title="Magnifier Zoom"
+              style={{ width: '50px' }}
+            >
+              {[2, 3, 4, 5, 6, 8, 10].map(z => (
+                <option key={z} value={z}>{z}x</option>
+              ))}
+            </select>
+             <select
+              className="font-select"
+              value={magnifierSize}
+              onChange={(e) => setMagnifierSize(Number(e.target.value))}
+              title="Magnifier Size"
+              style={{ width: '60px' }}
+            >
+              {[40, 60, 80, 100, 120, 150].map(s => (
+                <option key={s} value={s}>{s}px</option>
+              ))}
+            </select>
+          </>
+        )}
       </div>
 
       {/* Row 3: Stamps */}

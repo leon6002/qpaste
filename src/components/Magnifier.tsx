@@ -29,8 +29,13 @@ export const Magnifier = () => {
 
   if (!image) return null;
 
-  const zoom = 3;
-  const radius = 60;
+  const magnifierSize = useAppStore(state => state.magnifierSize);
+  const magnifierZoom = useAppStore(state => state.magnifierZoom);
+
+  if (!image) return null;
+
+  const zoom = magnifierZoom;
+  const radius = magnifierSize;
   const offset = 20;
 
   // Calculate local position in the image (physical pixels)
