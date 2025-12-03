@@ -97,6 +97,12 @@ export const AnnotationLayer = () => {
               draggable={tool === 'select'}
               listening={tool === 'select'}
               onMouseDown={commonProps.onMouseDown}
+              onMouseEnter={commonProps.onMouseEnter}
+              onMouseLeave={commonProps.onMouseLeave}
+              shadowColor={commonProps.shadowColor}
+              shadowBlur={commonProps.shadowBlur}
+              shadowOpacity={commonProps.shadowOpacity}
+              shadowOffset={commonProps.shadowOffset}
               onClick={(e) => {
                 e.cancelBubble = true;
                 setEditingId(ann.id);
