@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -10,12 +10,46 @@ import { TextInput } from './components/TextInput';
 import { CursorInfo } from './components/CursorInfo';
 import { CloseButton } from './components/CloseButton';
 import { SelectionOverlay } from './components/SelectionOverlay';
+import { Settings } from './components/Settings';
+import { getSettingsStore } from './store-utils';
 
 function App() {
+  const [isSettingsWindow, setIsSettingsWindow] = useState(false);
   const setImages = useAppStore(state => state.setImages);
   const setCaptures = useAppStore(state => state.setCaptures);
   const setIsReady = useAppStore(state => state.setIsReady);
   const resetState = useAppStore(state => state.resetState);
+  
+  // Settings setters
+  const setAppColor = useAppStore(state => state.setColor);
+  const setAppFontSize = useAppStore(state => state.setFontSize);
+  const setAppShowMagnifier = useAppStore(state => state.setShowMagnifier);
+  const setAppMagnifierSize = useAppStore(state => state.setMagnifierSize);
+  const setAppMagnifierZoom = useAppStore(state => state.setMagnifierZoom);
+
+  useEffect(() => {
+    const checkWindow = async () => {
+      const label = getCurrentWindow().label;
+      if (label === 'settings') {
+        setIsSettingsWindow(true);
+      } else {
+        // Load settings for main window
+        const store = await getSettingsStore();
+        const savedColor = await store.get<string>('defaultColor');
+        const savedFontSize = await store.get<number>('defaultFontSize');
+        const savedMagEnabled = await store.get<boolean>('magnifierEnabled');
+        const savedMagSize = await store.get<number>('magnifierSize');
+        const savedMagZoom = await store.get<number>('magnifierZoom');
+
+        if (savedColor) setAppColor(savedColor);
+        if (savedFontSize) setAppFontSize(savedFontSize);
+        if (savedMagEnabled !== null && savedMagEnabled !== undefined) setAppShowMagnifier(savedMagEnabled);
+        if (savedMagSize) setAppMagnifierSize(savedMagSize);
+        if (savedMagZoom) setAppMagnifierZoom(savedMagZoom);
+      }
+    };
+    checkWindow();
+  }, []);
 
   const captureScreen = async () => {
     setIsReady(false);
@@ -84,6 +118,10 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
+
+  if (isSettingsWindow) {
+    return <Settings />;
+  }
 
   return (
     <>

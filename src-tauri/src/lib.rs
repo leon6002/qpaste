@@ -193,6 +193,8 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_autostart::init(tauri_plugin_autostart::MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"])))
+        .plugin(tauri_plugin_store::Builder::default().build())
         .manage(AppState {
             quality: Mutex::new(ImageQuality::High),
             menu_items: Mutex::new(None),
@@ -227,6 +229,7 @@ pub fn run() {
             // System Tray
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+            let settings_i = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
 
             let quality_high =
                 CheckMenuItem::with_id(app, "quality_high", "High", true, true, None::<&str>)?;
@@ -252,7 +255,7 @@ pub fn run() {
                 });
             }
 
-            let menu = Menu::with_items(app, &[&show_i, &quality_menu, &quit_i])?;
+            let menu = Menu::with_items(app, &[&show_i, &settings_i, &quality_menu, &quit_i])?;
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -264,6 +267,12 @@ pub fn run() {
                     }
                     "show" => {
                         toggle_window(app);
+                    }
+                    "settings" => {
+                        if let Some(window) = app.get_webview_window("settings") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
                     }
                     "quality_high" => {
                         let state = app.state::<AppState>();
