@@ -21,10 +21,7 @@ export const Toolbar = () => {
   const selection = useAppStore(state => state.selection);
   const showMagnifier = useAppStore(state => state.showMagnifier);
   const setShowMagnifier = useAppStore(state => state.setShowMagnifier);
-  const magnifierSize = useAppStore(state => state.magnifierSize);
-  const setMagnifierSize = useAppStore(state => state.setMagnifierSize);
-  const magnifierZoom = useAppStore(state => state.magnifierZoom);
-  const setMagnifierZoom = useAppStore(state => state.setMagnifierZoom);
+
   const width = Math.abs(selection.endX - selection.startX);
 
   const colors = ['#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#FFFFFF', '#000000'];
@@ -161,6 +158,7 @@ export const Toolbar = () => {
           ))}
         </select>
 
+        {/* Magnifier controls hidden as per user request to prevent layout shifts
         {showMagnifier && (
           <>
             <div className="divider" />
@@ -188,6 +186,7 @@ export const Toolbar = () => {
             </select>
           </>
         )}
+        */}
       </div>
 
       {/* Row 3: Stamps */}

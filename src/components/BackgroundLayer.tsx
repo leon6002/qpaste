@@ -1,3 +1,4 @@
+import React from 'react';
 import { Layer, Rect, Image as KonvaImage, Group } from 'react-konva';
 import { useAppStore } from '../store';
 
@@ -5,8 +6,13 @@ export const BackgroundLayer = () => {
   const images = useAppStore(state => state.images);
   const captures = useAppStore(state => state.captures);
   const selection = useAppStore(state => state.selection);
+  const showMagnifier = useAppStore(state => state.showMagnifier); // Force re-render when magnifier toggles
 
   const scale = 1 / window.devicePixelRatio;
+  
+  React.useEffect(() => {
+    // Force re-render when magnifier toggles
+  }, [showMagnifier]);
 
   const getSelectionRect = () => {
     const x = Math.min(selection.startX, selection.endX);
