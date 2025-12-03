@@ -1,3 +1,4 @@
+import React from 'react';
 import { Rect, Arrow, Group, Text } from 'react-konva';
 import { useAppStore } from '../store';
 
@@ -10,6 +11,7 @@ export const AnnotationLayer = () => {
   const setTextInput = useAppStore(state => state.setTextInput);
   const editingId = useAppStore(state => state.editingId);
   const tool = useAppStore(state => state.tool);
+  const [hoveredId, setHoveredId] = React.useState<string | null>(null);
 
   const fontFamily = 'sans-serif';
   const lineHeight = 1.2;
@@ -51,7 +53,25 @@ export const AnnotationLayer = () => {
               };
               setAnnotations(newAnns);
             }
-          }
+          },
+          onMouseEnter: (e: any) => {
+            if (tool === 'select') {
+              const container = e.target.getStage().container();
+              container.style.cursor = 'move';
+              setHoveredId(ann.id);
+            }
+          },
+          onMouseLeave: (e: any) => {
+            if (tool === 'select') {
+              const container = e.target.getStage().container();
+              container.style.cursor = 'default';
+              setHoveredId(null);
+            }
+          },
+          shadowColor: 'black',
+          shadowBlur: hoveredId === ann.id ? 10 : 0,
+          shadowOpacity: 0.6,
+          shadowOffset: { x: 0, y: 0 }
         };
 
         if (ann.type === 'rect') {
