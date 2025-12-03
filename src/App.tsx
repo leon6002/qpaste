@@ -52,7 +52,7 @@ function App() {
   };
 
   useEffect(() => {
-    captureScreen();
+    // captureScreen(); // Removed to prevent auto-capture on startup
 
     let unlistenFn: (() => void) | undefined;
 
@@ -91,7 +91,6 @@ function App() {
       <Canvas>
         <CursorInfo />
       </Canvas>
-      <Toolbar />
       <Toolbar />
       <TextInput />
       <SelectionOverlay />
