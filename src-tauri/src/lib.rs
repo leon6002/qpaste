@@ -155,6 +155,11 @@ async fn save_image(path: String, base64_image: String) -> Result<(), String> {
     Ok(())
 }
 
+#[tauri::command]
+fn log_msg(msg: String) {
+    println!("[FRONTEND] {}", msg);
+}
+
 fn toggle_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
@@ -294,7 +299,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             capture_screen,
             copy_to_clipboard,
-            save_image
+            save_image,
+            log_msg
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
