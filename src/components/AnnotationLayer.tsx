@@ -11,6 +11,8 @@ export const AnnotationLayer = () => {
   const setTextInput = useAppStore(state => state.setTextInput);
   const editingId = useAppStore(state => state.editingId);
   const tool = useAppStore(state => state.tool);
+  const selectedId = useAppStore(state => state.selectedId);
+  const setSelectedId = useAppStore(state => state.setSelectedId);
   const [hoveredId, setHoveredId] = React.useState<string | null>(null);
 
   const fontFamily = 'sans-serif';
@@ -41,6 +43,9 @@ export const AnnotationLayer = () => {
           },
           onClick: (e: any) => {
             e.cancelBubble = true;
+            if (tool === 'select') {
+              setSelectedId(ann.id);
+            }
           },
           onDragEnd: (e: any) => {
             const idx = annotations.findIndex(a => a.id === ann.id);
@@ -68,8 +73,8 @@ export const AnnotationLayer = () => {
               setHoveredId(null);
             }
           },
-          shadowColor: 'black',
-          shadowBlur: hoveredId === ann.id ? 10 : 0,
+          shadowColor: selectedId === ann.id ? '#00AAFF' : 'black',
+          shadowBlur: (hoveredId === ann.id || selectedId === ann.id) ? 10 : 0,
           shadowOpacity: 0.6,
           shadowOffset: { x: 0, y: 0 }
         };
@@ -105,6 +110,9 @@ export const AnnotationLayer = () => {
               shadowOffset={commonProps.shadowOffset}
               onClick={(e) => {
                 e.cancelBubble = true;
+                if (tool === 'select') {
+                  setSelectedId(ann.id);
+                }
                 setEditingId(ann.id);
                 setTextInput({
                   x: ann.x,
@@ -134,6 +142,7 @@ export const AnnotationLayer = () => {
           <Rect x={currentAnnotation.x} y={currentAnnotation.y} width={currentAnnotation.width} height={currentAnnotation.height} stroke={currentAnnotation.color} strokeWidth={2} /> :
           <Arrow points={currentAnnotation.points || []} stroke={currentAnnotation.color} strokeWidth={2} fill={currentAnnotation.color} />
       )}
+
     </Group>
   );
 };

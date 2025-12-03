@@ -9,6 +9,7 @@ import { Toolbar } from './components/Toolbar';
 import { TextInput } from './components/TextInput';
 import { CursorInfo } from './components/CursorInfo';
 import { CloseButton } from './components/CloseButton';
+import { SelectionOverlay } from './components/SelectionOverlay';
 
 function App() {
   const setImages = useAppStore(state => state.setImages);
@@ -66,6 +67,13 @@ function App() {
     const handleKeyDown = async (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         await getCurrentWindow().hide();
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        const state = useAppStore.getState();
+        if (state.selectedId) {
+          const newAnns = state.annotations.filter(a => a.id !== state.selectedId);
+          state.setAnnotations(newAnns);
+          state.setSelectedId(null);
+        }
       }
     };
 
@@ -84,7 +92,9 @@ function App() {
         <CursorInfo />
       </Canvas>
       <Toolbar />
+      <Toolbar />
       <TextInput />
+      <SelectionOverlay />
     </>
   );
 }

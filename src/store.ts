@@ -41,6 +41,7 @@ interface AppState {
   annotations: Annotation[];
   currentAnnotation: Annotation | null;
   editingId: string | null;
+  selectedId: string | null;
   
   // Tool State
   tool: 'select' | 'rect' | 'arrow' | 'text';
@@ -69,6 +70,7 @@ interface AppState {
   setAnnotations: (annotations: Annotation[] | ((prev: Annotation[]) => Annotation[])) => void;
   setCurrentAnnotation: (annotation: Annotation | null) => void;
   setEditingId: (id: string | null) => void;
+  setSelectedId: (id: string | null) => void;
   setTool: (tool: 'select' | 'rect' | 'arrow' | 'text') => void;
   setColor: (color: string) => void;
   setFontSize: (fontSize: number) => void;
@@ -96,6 +98,7 @@ export const useAppStore = create<AppState>((set) => ({
   annotations: [],
   currentAnnotation: null,
   editingId: null,
+  selectedId: null,
   tool: 'select',
   color: '#FF0000',
   fontSize: 16,
@@ -120,6 +123,7 @@ export const useAppStore = create<AppState>((set) => ({
   })),
   setCurrentAnnotation: (currentAnnotation) => set({ currentAnnotation }),
   setEditingId: (editingId) => set({ editingId }),
+  setSelectedId: (selectedId) => set({ selectedId }),
   setTool: (tool) => set({ tool }),
   setColor: (color) => set({ color }),
   setFontSize: (fontSize) => set({ fontSize }),
@@ -146,6 +150,7 @@ export const useAppStore = create<AppState>((set) => ({
     pendingText: null,
     showToolbar: false,
     editingId: null,
+    selectedId: null,
     showMagnifier: true,
     magnifierSize: 60,
     magnifierZoom: 4
