@@ -29,7 +29,6 @@ export const AnnotationLayer = () => {
     <Group clipX={x} clipY={y} clipWidth={width} clipHeight={height}>
       {annotations.map((ann) => {
         const commonProps = {
-          key: ann.id,
           name: `ann-${ann.id}`,
           draggable: true,
           onMouseDown: (e: any) => {
@@ -56,6 +55,7 @@ export const AnnotationLayer = () => {
         if (ann.type === 'rect') {
           return (
             <Rect
+              key={ann.id}
               {...commonProps}
               x={ann.x} y={ann.y}
               width={ann.width || 0} height={ann.height || 0}
@@ -65,7 +65,7 @@ export const AnnotationLayer = () => {
             />
           );
         } else if (ann.type === 'arrow') {
-          return <Arrow {...commonProps} points={ann.points || []} stroke={ann.color} strokeWidth={2} fill={ann.color} />;
+          return <Arrow key={ann.id} {...commonProps} points={ann.points || []} stroke={ann.color} strokeWidth={2} fill={ann.color} />;
         } else if (ann.type === 'text') {
           return (
             <Group

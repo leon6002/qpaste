@@ -1,5 +1,5 @@
 import React from 'react';
-import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save } from 'lucide-react';
+import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save, ZoomIn } from 'lucide-react';
 import { useAppStore } from '../store';
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -19,6 +19,8 @@ export const Toolbar = () => {
   const setDragOffset = useAppStore(state => state.setDragOffset);
   const showToolbar = useAppStore(state => state.showToolbar);
   const selection = useAppStore(state => state.selection);
+  const showMagnifier = useAppStore(state => state.showMagnifier);
+  const setShowMagnifier = useAppStore(state => state.setShowMagnifier);
   const width = Math.abs(selection.endX - selection.startX);
 
   const colors = ['#FF0000', '#FFFF00', '#00FF00', '#00FFFF', '#0000FF', '#FF00FF', '#FFFFFF', '#000000'];
@@ -106,6 +108,13 @@ export const Toolbar = () => {
             <Save size={14} />
           </button>
           <div style={{ width: '12px' }} /> {/* Spacer */}
+          <button 
+            className={`tool-btn ${showMagnifier ? 'active' : ''}`}
+            onClick={() => setShowMagnifier(!showMagnifier)} 
+            title="Toggle Magnifier"
+          >
+            <ZoomIn size={14} />
+          </button>
           <button className="tool-btn danger" onClick={handleClose} title="Close">
             <X size={14} />
           </button>

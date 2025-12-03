@@ -3,6 +3,7 @@ import { Stage, Layer } from 'react-konva';
 import { useAppStore } from '../store';
 import { BackgroundLayer } from './BackgroundLayer';
 import { AnnotationLayer } from './AnnotationLayer';
+import { Magnifier } from './Magnifier';
 import { invoke } from "@tauri-apps/api/core";
 import { save } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -257,6 +258,7 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
       <Layer>
          <AnnotationLayer />
          {children}
+         <Magnifier />
       </Layer>
     </Stage>
   );
