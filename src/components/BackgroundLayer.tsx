@@ -1,9 +1,7 @@
 import { Layer, Rect, Image as KonvaImage, Group } from 'react-konva';
 import { useAppStore } from '../store';
-import { invoke } from "@tauri-apps/api/core";
 
 export const BackgroundLayer = () => {
-  invoke("log_msg", { msg: "Render: BackgroundLayer" });
   const images = useAppStore(state => state.images);
   const captures = useAppStore(state => state.captures);
   const selection = useAppStore(state => state.selection);

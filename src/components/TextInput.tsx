@@ -1,8 +1,6 @@
 import { useAppStore } from '../store';
-import { invoke } from "@tauri-apps/api/core";
 
 export const TextInput = () => {
-  invoke("log_msg", { msg: "Render: TextInput" });
   const textInput = useAppStore(state => state.textInput);
   const setTextInput = useAppStore(state => state.setTextInput);
   const fontSize = useAppStore(state => state.fontSize);

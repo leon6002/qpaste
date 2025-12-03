@@ -1,9 +1,7 @@
 import { Rect, Arrow, Group, Text } from 'react-konva';
 import { useAppStore } from '../store';
-import { invoke } from "@tauri-apps/api/core";
 
 export const AnnotationLayer = () => {
-  invoke("log_msg", { msg: "Render: AnnotationLayer" });
   const annotations = useAppStore(state => state.annotations);
   const setAnnotations = useAppStore(state => state.setAnnotations);
   const currentAnnotation = useAppStore(state => state.currentAnnotation);

@@ -1,11 +1,9 @@
 import React from 'react';
 import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save } from 'lucide-react';
 import { useAppStore } from '../store';
-import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export const Toolbar = () => {
-  invoke("log_msg", { msg: "Render: Toolbar" });
   const tool = useAppStore(state => state.tool);
   const setTool = useAppStore(state => state.setTool);
   const color = useAppStore(state => state.color);

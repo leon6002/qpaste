@@ -1,9 +1,7 @@
 import { Group, Line, Text } from 'react-konva';
 import { useAppStore } from '../store';
-import { invoke } from "@tauri-apps/api/core";
 
 export const CursorInfo = () => {
-  invoke("log_msg", { msg: "Render: CursorInfo" });
   const cursorPos = useAppStore(state => state.cursorPos);
   const showToolbar = useAppStore(state => state.showToolbar);
 

@@ -8,7 +8,6 @@ import { save } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export const Canvas = ({ children }: { children?: React.ReactNode }) => {
-  invoke("log_msg", { msg: "Render: Canvas" });
   const stageRef = useRef<any>(null);
 
   const isReady = useAppStore(state => state.isReady);
@@ -63,7 +62,6 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const handleMouseDown = (e: any) => {
-    invoke("log_msg", { msg: `MouseDown: isReady=${isReady}, tool=${tool}` });
     if (!isReady) return;
     if (e.target.getParent()?.hasName('toolbar') || e.target.hasName('toolbar')) return;
 
@@ -158,7 +156,6 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
   };
 
   const handleMouseUp = (e: any) => {
-    invoke("log_msg", { msg: `MouseUp: tool=${tool}, isSelecting=${selection.isSelecting}` });
     if (tool === 'select') {
       if (selection.isSelecting) {
         setSelection((prev) => ({ ...prev, isSelecting: false }));
