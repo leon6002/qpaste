@@ -62,6 +62,11 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
     setTextInput(null);
   };
 
+  const [interactionMode, setInteractionMode] = React.useState<'none' | 'creating' | 'moving' | 'resizing'>('none');
+  const [resizeHandle, setResizeHandle] = React.useState<string | null>(null);
+  const [dragStart, setDragStart] = React.useState<{ x: number, y: number } | null>(null);
+  const [initialSelection, setInitialSelection] = React.useState<{ startX: number, startY: number, endX: number, endY: number } | null>(null);
+
   const handleMouseDown = (e: any) => {
     if (!isReady) return;
     if (e.target.getParent()?.hasName('toolbar') || e.target.hasName('toolbar')) return;
@@ -75,6 +80,46 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
     const pos = stage.getPointerPosition();
 
     if (tool === 'select') {
+      const { x, y, width, height } = getSelectionRect();
+      
+      // Check for resize handles first
+      const handleSize = 10;
+      const handles = [
+        { name: 'nw', x: x, y: y },
+        { name: 'n', x: x + width / 2, y: y },
+        { name: 'ne', x: x + width, y: y },
+        { name: 'e', x: x + width, y: y + height / 2 },
+        { name: 'se', x: x + width, y: y + height },
+        { name: 's', x: x + width / 2, y: y + height },
+        { name: 'sw', x: x, y: y + height },
+        { name: 'w', x: x, y: y + height / 2 },
+      ];
+
+      const clickedHandle = handles.find(h => 
+        pos.x >= h.x - handleSize && pos.x <= h.x + handleSize &&
+        pos.y >= h.y - handleSize && pos.y <= h.y + handleSize
+      );
+
+      if (clickedHandle && width > 0 && height > 0) {
+        setInteractionMode('resizing');
+        setResizeHandle(clickedHandle.name);
+        setDragStart(pos);
+        setInitialSelection(selection);
+        return;
+      }
+
+      // Check if inside selection
+      if (width > 0 && height > 0 && 
+          pos.x >= x && pos.x <= x + width && 
+          pos.y >= y && pos.y <= y + height) {
+        setInteractionMode('moving');
+        setDragStart(pos);
+        setInitialSelection(selection);
+        return;
+      }
+
+      // Otherwise start new selection
+      setInteractionMode('creating');
       setSelection({
         startX: pos.x,
         startY: pos.y,
@@ -130,15 +175,52 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
     const stage = e.target.getStage();
     const pos = stage.getPointerPosition();
     setCursorPos(pos);
-    // console.log('MouseMove:', { tool, isSelecting: selection.isSelecting, pos });
 
     if (tool === 'select') {
-      if (!selection.isSelecting) return;
-      setSelection((prev) => ({
-        ...prev,
-        endX: pos.x,
-        endY: pos.y,
-      }));
+      if (interactionMode === 'creating') {
+        setSelection((prev) => ({
+          ...prev,
+          endX: pos.x,
+          endY: pos.y,
+        }));
+      } else if (interactionMode === 'moving' && dragStart && initialSelection) {
+        const dx = pos.x - dragStart.x;
+        const dy = pos.y - dragStart.y;
+        setSelection({
+          ...initialSelection,
+          startX: initialSelection.startX + dx,
+          startY: initialSelection.startY + dy,
+          endX: initialSelection.endX + dx,
+          endY: initialSelection.endY + dy,
+          isSelecting: false
+        });
+      } else if (interactionMode === 'resizing' && initialSelection) {
+        let { startX, startY, endX, endY } = initialSelection;
+        // Normalize rect for easier resizing logic
+        let x = Math.min(startX, endX);
+        let y = Math.min(startY, endY);
+        let w = Math.abs(endX - startX);
+        let h = Math.abs(endY - startY);
+
+        switch (resizeHandle) {
+          case 'nw': x = pos.x; y = pos.y; w = (initialSelection.endX > initialSelection.startX ? initialSelection.endX : initialSelection.startX) - x; h = (initialSelection.endY > initialSelection.startY ? initialSelection.endY : initialSelection.startY) - y; break;
+          case 'n': y = pos.y; h = (initialSelection.endY > initialSelection.startY ? initialSelection.endY : initialSelection.startY) - y; break;
+          case 'ne': y = pos.y; w = pos.x - x; h = (initialSelection.endY > initialSelection.startY ? initialSelection.endY : initialSelection.startY) - y; break;
+          case 'e': w = pos.x - x; break;
+          case 'se': w = pos.x - x; h = pos.y - y; break;
+          case 's': h = pos.y - y; break;
+          case 'sw': x = pos.x; w = (initialSelection.endX > initialSelection.startX ? initialSelection.endX : initialSelection.startX) - x; h = pos.y - y; break;
+          case 'w': x = pos.x; w = (initialSelection.endX > initialSelection.startX ? initialSelection.endX : initialSelection.startX) - x; break;
+        }
+
+        setSelection({
+          startX: x,
+          startY: y,
+          endX: x + w,
+          endY: y + h,
+          isSelecting: false
+        });
+      }
     } else {
       if (!currentAnnotation) return;
       if (currentAnnotation.type === 'rect') {
@@ -158,8 +240,15 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
 
   const handleMouseUp = (e: any) => {
     if (tool === 'select') {
-      if (selection.isSelecting) {
-        setSelection((prev) => ({ ...prev, isSelecting: false }));
+      if (interactionMode === 'creating' || interactionMode === 'moving' || interactionMode === 'resizing') {
+        if (interactionMode === 'creating') {
+           setSelection((prev) => ({ ...prev, isSelecting: false }));
+        }
+        
+        setInteractionMode('none');
+        setDragStart(null);
+        setInitialSelection(null);
+        setResizeHandle(null);
 
         const stage = e.target.getStage();
         const pos = stage.getPointerPosition();

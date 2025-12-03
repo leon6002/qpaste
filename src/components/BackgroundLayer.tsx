@@ -63,6 +63,33 @@ export const BackgroundLayer = () => {
         strokeWidth={2}
         listening={false}
       />
+      
+      {/* Resize Handles */}
+      {width > 0 && height > 0 && !selection.isSelecting && (
+        <>
+          {[
+            { x: x, y: y, name: 'nw' },
+            { x: x + width / 2, y: y, name: 'n' },
+            { x: x + width, y: y, name: 'ne' },
+            { x: x + width, y: y + height / 2, name: 'e' },
+            { x: x + width, y: y + height, name: 'se' },
+            { x: x + width / 2, y: y + height, name: 's' },
+            { x: x, y: y + height, name: 'sw' },
+            { x: x, y: y + height / 2, name: 'w' },
+          ].map((handle) => (
+            <Rect
+              key={handle.name}
+              x={handle.x - 4}
+              y={handle.y - 4}
+              width={8}
+              height={8}
+              fill="white"
+              stroke="#00AAFF"
+              strokeWidth={1}
+            />
+          ))}
+        </>
+      )}
     </Layer>
   );
 };
