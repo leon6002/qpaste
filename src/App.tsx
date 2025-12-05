@@ -116,9 +116,10 @@ function App() {
 
   return (
     <div className="container">
-      <Canvas />
+      <Canvas>
+        <CursorInfo />
+      </Canvas>
       <SelectionOverlay />
-      <CursorInfo />
       <Toolbar />
       <TextInput />
     </div>
