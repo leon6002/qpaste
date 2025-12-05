@@ -7,13 +7,7 @@ export const BackgroundLayer = () => {
   const captures = useAppStore(state => state.captures);
   const selection = useAppStore(state => state.selection);
   const showMagnifier = useAppStore(state => state.showMagnifier); // Force re-render when magnifier toggles
-  // We don't strictly need tool here if we assume this layer is only active/interactive when tool is select?
-  // But for cursor reset logic 'crosshair', it implies tool is select.
-  // Let's grab tool just in case we want to be safe, though hardcoding crosshair for now matches the request.
-  // Actually, if tool is NOT select, we might not want crosshair.
-  // But BackgroundLayer handles are only shown if !selection.isSelecting.
-  // And usually handles are only relevant in select mode.
-  // Let's assume select mode for now.
+  const tool = useAppStore(state => state.tool);
 
 
   const scale = 1 / window.devicePixelRatio;
@@ -79,7 +73,7 @@ export const BackgroundLayer = () => {
       />
       
       {/* Selection Move Area */}
-      {width > 0 && height > 0 && !selection.isSelecting && (
+      {width > 0 && height > 0 && !selection.isSelecting && tool === 'select' && (
         <Rect
           x={x}
           y={y}
@@ -102,7 +96,7 @@ export const BackgroundLayer = () => {
       )}
       
       {/* Resize Handles */}
-      {width > 0 && height > 0 && !selection.isSelecting && (
+      {width > 0 && height > 0 && !selection.isSelecting && tool === 'select' && (
         <>
           {[
             { x: x, y: y, name: 'nw', cursor: 'nw-resize' },
