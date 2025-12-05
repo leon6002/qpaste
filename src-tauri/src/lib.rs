@@ -233,7 +233,7 @@ pub fn run() {
             // System Tray
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
-            let settings_i = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)?;
+            // Settings item removed
 
             let quality_high =
                 CheckMenuItem::with_id(app, "quality_high", "High", true, true, None::<&str>)?;
@@ -259,7 +259,7 @@ pub fn run() {
                 });
             }
 
-            let menu = Menu::with_items(app, &[&show_i, &settings_i, &quality_menu, &quit_i])?;
+            let menu = Menu::with_items(app, &[&show_i, &quality_menu, &quit_i])?;
 
             let _tray = tauri::tray::TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -272,12 +272,7 @@ pub fn run() {
                     "show" => {
                         toggle_window(app);
                     }
-                    "settings" => {
-                        if let Some(window) = app.get_webview_window("settings") {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
+                    // Settings handler removed
                     "quality_high" => {
                         let state = app.state::<AppState>();
                         *state.quality.lock().unwrap() = ImageQuality::High;

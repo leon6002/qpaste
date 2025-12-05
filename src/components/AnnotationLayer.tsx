@@ -69,7 +69,7 @@ export const AnnotationLayer = () => {
           onMouseLeave: (e: any) => {
             if (tool === 'select') {
               const container = e.target.getStage().container();
-              container.style.cursor = 'default';
+              container.style.cursor = 'crosshair';
               setHoveredId(null);
             }
           },

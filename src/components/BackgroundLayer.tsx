@@ -7,6 +7,14 @@ export const BackgroundLayer = () => {
   const captures = useAppStore(state => state.captures);
   const selection = useAppStore(state => state.selection);
   const showMagnifier = useAppStore(state => state.showMagnifier); // Force re-render when magnifier toggles
+  // We don't strictly need tool here if we assume this layer is only active/interactive when tool is select?
+  // But for cursor reset logic 'crosshair', it implies tool is select.
+  // Let's grab tool just in case we want to be safe, though hardcoding crosshair for now matches the request.
+  // Actually, if tool is NOT select, we might not want crosshair.
+  // But BackgroundLayer handles are only shown if !selection.isSelecting.
+  // And usually handles are only relevant in select mode.
+  // Let's assume select mode for now.
+
 
   const scale = 1 / window.devicePixelRatio;
   
@@ -70,18 +78,41 @@ export const BackgroundLayer = () => {
         listening={false}
       />
       
+      {/* Selection Move Area */}
+      {width > 0 && height > 0 && !selection.isSelecting && (
+        <Rect
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          fill="transparent"
+          onMouseEnter={(e) => {
+            const stage = e.target.getStage();
+            if (stage) {
+              stage.container().style.cursor = 'move';
+            }
+          }}
+          onMouseLeave={(e) => {
+            const stage = e.target.getStage();
+            if (stage) {
+              stage.container().style.cursor = 'crosshair';
+            }
+          }}
+        />
+      )}
+      
       {/* Resize Handles */}
       {width > 0 && height > 0 && !selection.isSelecting && (
         <>
           {[
-            { x: x, y: y, name: 'nw' },
-            { x: x + width / 2, y: y, name: 'n' },
-            { x: x + width, y: y, name: 'ne' },
-            { x: x + width, y: y + height / 2, name: 'e' },
-            { x: x + width, y: y + height, name: 'se' },
-            { x: x + width / 2, y: y + height, name: 's' },
-            { x: x, y: y + height, name: 'sw' },
-            { x: x, y: y + height / 2, name: 'w' },
+            { x: x, y: y, name: 'nw', cursor: 'nw-resize' },
+            { x: x + width / 2, y: y, name: 'n', cursor: 'n-resize' },
+            { x: x + width, y: y, name: 'ne', cursor: 'ne-resize' },
+            { x: x + width, y: y + height / 2, name: 'e', cursor: 'e-resize' },
+            { x: x + width, y: y + height, name: 'se', cursor: 'se-resize' },
+            { x: x + width / 2, y: y + height, name: 's', cursor: 's-resize' },
+            { x: x, y: y + height, name: 'sw', cursor: 'sw-resize' },
+            { x: x, y: y + height / 2, name: 'w', cursor: 'w-resize' },
           ].map((handle) => (
             <Rect
               key={handle.name}
@@ -92,6 +123,18 @@ export const BackgroundLayer = () => {
               fill="white"
               stroke="#00AAFF"
               strokeWidth={1}
+              onMouseEnter={(e) => {
+                const stage = e.target.getStage();
+                if (stage) {
+                  stage.container().style.cursor = handle.cursor;
+                }
+              }}
+              onMouseLeave={(e) => {
+                const stage = e.target.getStage();
+                if (stage) {
+                  stage.container().style.cursor = 'crosshair';
+                }
+              }}
             />
           ))}
         </>

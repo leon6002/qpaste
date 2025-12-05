@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -8,13 +8,10 @@ import { Canvas } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
 import { TextInput } from './components/TextInput';
 import { CursorInfo } from './components/CursorInfo';
-import { CloseButton } from './components/CloseButton';
 import { SelectionOverlay } from './components/SelectionOverlay';
-import { Settings } from './components/Settings';
 import { getSettingsStore } from './store-utils';
 
 function App() {
-  const [isSettingsWindow, setIsSettingsWindow] = useState(false);
   const setImages = useAppStore(state => state.setImages);
   const setCaptures = useAppStore(state => state.setCaptures);
   const setIsReady = useAppStore(state => state.setIsReady);
@@ -28,27 +25,25 @@ function App() {
   const setAppMagnifierZoom = useAppStore(state => state.setMagnifierZoom);
 
   useEffect(() => {
-    const checkWindow = async () => {
-      const label = getCurrentWindow().label;
-      if (label === 'settings') {
-        setIsSettingsWindow(true);
-      } else {
-        // Load settings for main window
-        const store = await getSettingsStore();
-        const savedColor = await store.get<string>('defaultColor');
-        const savedFontSize = await store.get<number>('defaultFontSize');
-        const savedMagEnabled = await store.get<boolean>('magnifierEnabled');
-        const savedMagSize = await store.get<number>('magnifierSize');
-        const savedMagZoom = await store.get<number>('magnifierZoom');
+    const init = async () => {
+      // Logic to check window label removed as we only have main window now
+      await invoke('log_msg', { msg: "App initialized" });
 
-        if (savedColor) setAppColor(savedColor);
-        if (savedFontSize) setAppFontSize(savedFontSize);
-        if (savedMagEnabled !== null && savedMagEnabled !== undefined) setAppShowMagnifier(savedMagEnabled);
-        if (savedMagSize) setAppMagnifierSize(savedMagSize);
-        if (savedMagZoom) setAppMagnifierZoom(savedMagZoom);
-      }
+      // Load settings for main window
+      const store = await getSettingsStore();
+      const savedColor = await store.get<string>('defaultColor');
+      const savedFontSize = await store.get<number>('defaultFontSize');
+      const savedMagEnabled = await store.get<boolean>('magnifierEnabled');
+      const savedMagSize = await store.get<number>('magnifierSize');
+      const savedMagZoom = await store.get<number>('magnifierZoom');
+
+      if (savedColor) setAppColor(savedColor);
+      if (savedFontSize) setAppFontSize(savedFontSize);
+      if (savedMagEnabled !== null && savedMagEnabled !== undefined) setAppShowMagnifier(savedMagEnabled);
+      if (savedMagSize) setAppMagnifierSize(savedMagSize);
+      if (savedMagZoom) setAppMagnifierZoom(savedMagZoom);
     };
-    checkWindow();
+    init();
   }, []);
 
   const captureScreen = async () => {
@@ -119,20 +114,14 @@ function App() {
     };
   }, []);
 
-  if (isSettingsWindow) {
-    return <Settings />;
-  }
-
   return (
-    <>
-      <CloseButton />
-      <Canvas>
-        <CursorInfo />
-      </Canvas>
+    <div className="container">
+      <Canvas />
+      <SelectionOverlay />
+      <CursorInfo />
       <Toolbar />
       <TextInput />
-      <SelectionOverlay />
-    </>
+    </div>
   );
 }
 

@@ -365,6 +365,7 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       ref={stageRef}
+      style={{ cursor: tool === 'select' ? 'crosshair' : 'default' }}
     >
       <BackgroundLayer />
       <Layer>
