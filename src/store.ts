@@ -110,7 +110,7 @@ export const useAppStore = create<AppState>((set) => ({
   dragOffset: { x: 0, y: 0 },
   textInput: null,
   cursorPos: null,
-  showMagnifier: true,
+  showMagnifier: false,
   magnifierSize: 60,
   magnifierZoom: 4,
 
@@ -151,7 +151,7 @@ export const useAppStore = create<AppState>((set) => ({
     showToolbar: false,
     editingId: null,
     selectedId: null,
-    showMagnifier: true,
+    showMagnifier: false,
     magnifierSize: 60,
     magnifierZoom: 4
   })

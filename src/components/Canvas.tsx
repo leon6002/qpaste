@@ -250,21 +250,22 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
         setInitialSelection(null);
         setResizeHandle(null);
 
-        const stage = e.target.getStage();
-        const pos = stage.getPointerPosition();
+        const { x, y, width, height } = getSelectionRect();
+        
         const padding = 20;
         const toolbarWidth = 500;
         const toolbarHeight = 150;
 
-        let tx = pos.x + padding;
-        let ty = pos.y + padding;
+        // Position at bottom-right of selection
+        let tx = x + width + padding;
+        let ty = y + height + padding;
 
         if (tx + toolbarWidth > window.innerWidth) {
-          tx = pos.x - toolbarWidth - padding;
+          tx = x + width - toolbarWidth - padding;
         }
 
         if (ty + toolbarHeight > window.innerHeight) {
-          ty = pos.y - toolbarHeight - padding;
+          ty = y + height - toolbarHeight - padding;
         }
 
         setToolbarPos({ x: tx, y: ty });

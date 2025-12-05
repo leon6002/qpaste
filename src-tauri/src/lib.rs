@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Manager, Wry};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tauri_plugin_store::StoreExt;
 use xcap::Monitor;
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -200,6 +201,9 @@ pub fn run() {
             menu_items: Mutex::new(None),
         })
         .setup(|app| {
+            // Initialize store
+            let _ = app.store("settings.json");
+
             // Initialize Global Shortcut (Alt+Q and F1)
             let app_handle = app.handle().clone();
             app.handle().plugin(

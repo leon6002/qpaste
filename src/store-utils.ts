@@ -12,7 +12,6 @@ export const getSettingsStore = async (): Promise<Store> => {
         console.warn('Failed to load settings.json, creating new store:', e);
         // @ts-ignore
         const store = new Store('settings.json');
-        await store.save();
         return store;
       }
     })();

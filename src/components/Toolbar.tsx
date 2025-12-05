@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Square, ArrowRight, Type, X, Undo, Copy as CopyIcon, Save, ZoomIn, MousePointer2 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -14,8 +14,10 @@ export const Toolbar = () => {
   const setPendingText = useAppStore(state => state.setPendingText);
   const setAnnotations = useAppStore(state => state.setAnnotations);
   const toolbarPos = useAppStore(state => state.toolbarPos);
+  const setToolbarPos = useAppStore(state => state.setToolbarPos);
   const isDraggingToolbar = useAppStore(state => state.isDraggingToolbar);
   const setIsDraggingToolbar = useAppStore(state => state.setIsDraggingToolbar);
+  const dragOffset = useAppStore(state => state.dragOffset);
   const setDragOffset = useAppStore(state => state.setDragOffset);
   const showToolbar = useAppStore(state => state.showToolbar);
   const selection = useAppStore(state => state.selection);
@@ -57,6 +59,47 @@ export const Toolbar = () => {
     });
     e.stopPropagation();
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingToolbar) {
+        setToolbarPos({
+          x: e.clientX - dragOffset.x,
+          y: e.clientY - dragOffset.y
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingToolbar(false);
+    };
+
+    if (isDraggingToolbar) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingToolbar, dragOffset, setToolbarPos, setIsDraggingToolbar]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+        e.preventDefault();
+        triggerCanvasAction('copy');
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        triggerCanvasAction('save');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   if (!showToolbar || width === 0 || !toolbarPos) return null;
 
@@ -109,10 +152,10 @@ export const Toolbar = () => {
           <button className="tool-btn" onClick={handleUndo} title="Undo (Ctrl+Z)">
             <Undo size={14} />
           </button>
-          <button className="tool-btn" onClick={() => triggerCanvasAction('copy')} title="Copy">
+          <button className="tool-btn" onClick={() => triggerCanvasAction('copy')} title="Copy (Ctrl+C)">
             <CopyIcon size={14} />
           </button>
-          <button className="tool-btn" onClick={() => triggerCanvasAction('save')} title="Save">
+          <button className="tool-btn" onClick={() => triggerCanvasAction('save')} title="Save (Ctrl+S)">
             <Save size={14} />
           </button>
           <div style={{ width: '12px' }} /> {/* Spacer */}

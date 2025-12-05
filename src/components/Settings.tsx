@@ -8,7 +8,7 @@ export const Settings = () => {
   const [autoStart, setAutoStart] = useState(false);
   const [defaultColor, setDefaultColor] = useState('#FF0000');
   const [defaultFontSize, setDefaultFontSize] = useState(16);
-  const [magnifierEnabled, setMagnifierEnabled] = useState(true);
+  const [magnifierEnabled, setMagnifierEnabled] = useState(false);
   const [magnifierSize, setMagnifierSize] = useState(60);
   const [magnifierZoom, setMagnifierZoom] = useState(2);
 
