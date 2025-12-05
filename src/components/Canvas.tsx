@@ -130,21 +130,42 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
       setShowToolbar(false);
     } else if (tool === 'text') {
       if (pendingText) {
+        // Center the stamp text
+        // Estimate width roughly as fontSize * length (for square-ish CJK or monospaced, 
+        // but for variable width it's an approx. It's better to center based on visual feel).
+        // Since stamps are usually single chars or short, centering by half width/height is good.
+        // Konva Text default alignment is top-left.
+        // We want pos to be center.
+        // x = pos.x - width/2
+        // y = pos.y - height/2
+        // We approximate width.
+        const estimatedWidth = fontSize * pendingText.length; 
+        // For single char stamps like ①, width is roughly fontSize.
+        
         setAnnotations([...annotations, {
           id: crypto.randomUUID(),
           type: 'text',
-          x: pos.x,
-          y: pos.y,
+          x: pos.x - (estimatedWidth / 2),
+          y: pos.y - (fontSize / 2),
           text: pendingText,
           color: color,
           fontSize: fontSize,
-          width: fontSize * pendingText.length
+          width: estimatedWidth
         }]);
         setPendingText(null); // Clear pending text after placement
       } else {
+        // Center the text input cursor
+        // Padding is 4px. Line height is approx 1.2 * fontSize.
+        // We want the cursor (vertical line) to be at pos.x, pos.y.
+        // So the box top-left should be:
+        // x = pos.x - padding
+        // y = pos.y - padding - (lineHeight / 2)
+        const padding = 4;
+        const lineHeight = fontSize * 1.2;
+        
         setTextInput({
-          x: pos.x,
-          y: pos.y,
+          x: pos.x - padding,
+          y: pos.y - padding - (lineHeight / 2),
           value: ''
         });
       }
