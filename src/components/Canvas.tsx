@@ -260,7 +260,7 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
     }
   };
 
-  const handleMouseUp = (e: any) => {
+  const handleMouseUp = () => {
     if (tool === 'select') {
       if (interactionMode === 'creating' || interactionMode === 'moving' || interactionMode === 'resizing') {
         if (interactionMode === 'creating') {
