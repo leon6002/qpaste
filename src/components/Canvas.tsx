@@ -155,17 +155,18 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
         setPendingText(null); // Clear pending text after placement
       } else {
         // Center the text input cursor
-        // Padding is 4px. Line height is approx 1.2 * fontSize.
+        // Padding is 4px, Border is 2px. Total offset 6px.
+        // Line height is approx 1.2 * fontSize.
         // We want the cursor (vertical line) to be at pos.x, pos.y.
         // So the box top-left should be:
-        // x = pos.x - padding
-        // y = pos.y - padding - (lineHeight / 2)
-        const padding = 4;
+        // x = pos.x - 6
+        // y = pos.y - 6 - (lineHeight / 2)
+        const offset = 6;
         const lineHeight = fontSize * 1.2;
         
         setTextInput({
-          x: pos.x - padding,
-          y: pos.y - padding - (lineHeight / 2),
+          x: pos.x - offset,
+          y: pos.y - offset - (lineHeight / 2),
           value: ''
         });
       }

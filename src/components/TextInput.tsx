@@ -22,6 +22,14 @@ export const TextInput = () => {
           newAnns[idx] = {
             ...newAnns[idx],
             text: textInput.value,
+            // We don't update x/y here because we assume the text box didn't move, 
+            // only content changed. 
+            // BUT if we are editing, the TextInput was placed at ann.x - 6.
+            // So the text inside is at (ann.x - 6) + 6 = ann.x.
+            // So we don't need to update x/y if we didn't move the box.
+            // However, if we want to be safe or if we support moving the text input later:
+            // x: textInput.x + 6,
+            // y: textInput.y + 6
           };
           setAnnotations(newAnns);
         }
@@ -30,8 +38,8 @@ export const TextInput = () => {
         setAnnotations([...annotations, {
           id: crypto.randomUUID(),
           type: 'text',
-          x: textInput.x,
-          y: textInput.y,
+          x: textInput.x + 6, // Offset for border(2) + padding(4)
+          y: textInput.y + 6,
           text: textInput.value,
           color: color,
           fontSize: fontSize,

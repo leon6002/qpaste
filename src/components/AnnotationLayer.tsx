@@ -115,8 +115,8 @@ export const AnnotationLayer = () => {
                 }
                 setEditingId(ann.id);
                 setTextInput({
-                  x: ann.x,
-                  y: ann.y,
+                  x: ann.x - 6, // Offset for border(2) + padding(4)
+                  y: ann.y - 6,
                   value: ann.text || ''
                 });
               }}
