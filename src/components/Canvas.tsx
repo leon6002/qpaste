@@ -321,13 +321,17 @@ export const Canvas = ({ children }: { children?: React.ReactNode }) => {
 
       const layer = stageRef.current.getLayers()[0];
       const borderNode = layer.findOne('.selection-border');
+      const resizeHandles = layer.find('.resize-handle');
+      
       if (borderNode) borderNode.hide();
+      resizeHandles.forEach((node: any) => node.hide());
 
       const dataUrl = stageRef.current.toDataURL({
         x, y, width, height, pixelRatio: window.devicePixelRatio
       });
 
       if (borderNode) borderNode.show();
+      resizeHandles.forEach((node: any) => node.show());
 
       try {
         if (action === 'copy') {

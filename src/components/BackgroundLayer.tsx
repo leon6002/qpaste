@@ -110,6 +110,7 @@ export const BackgroundLayer = () => {
           ].map((handle) => (
             <Rect
               key={handle.name}
+              name="resize-handle"
               x={handle.x - 4}
               y={handle.y - 4}
               width={8}
